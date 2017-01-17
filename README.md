@@ -1,4 +1,4 @@
-# Smart Scene Changer
+# Smart Scene Changer (Unity3d version 5.5.0 or higher)
 
 ----
 ## What is [Smart Scene Changer] ?
