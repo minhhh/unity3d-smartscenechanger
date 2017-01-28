@@ -2,7 +2,11 @@
 
 ----
 ## What is [Smart Scene Changer] ?
-[Smart Scene Changer] is script assets to change scene with showing now loading screen and load any startup contents like WWW or AssetBundle in background.
+[Smart Scene Changer] is script assets to change scene with showing now loading screen and load any startup contents like WWW or AssetBundle in background. 
+
+----
+## Asset Store
+https://www.assetstore.unity3d.com/jp/#!/content/80061
 
 ----
 ## Features
