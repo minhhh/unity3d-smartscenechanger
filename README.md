@@ -2,7 +2,7 @@
 
 ----
 ## What is [Smart Scene Changer] ?
-[Smart Scene Changer] is script assets to change scene with showing now loading screen and load any startup contents like WWW or AssetBundle in background. 
+[Smart Scene Changer] is a script asset which allows you to change the scene with a 'Now Loading' indicator, and ability to load any startup content, like WWW or AssetBundle in background.
 
 ----
 ## Asset Store
