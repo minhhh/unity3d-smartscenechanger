@@ -33,3 +33,5 @@ sysinfo.txt
 
 # Others
 *Prefs.asset*
+/Assets/AssetBundles*
+/Assets/Encrypted*

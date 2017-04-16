@@ -1206,8 +1206,8 @@ namespace SSC
 
             else
             {
-
-                using (WWW abwww = WWW.LoadFromCacheOrDownload(this.createAssetBundleUrl(keyNameDotVariant), 1))
+                
+                using (WWW abwww = WWW.LoadFromCacheOrDownload(this.createAssetBundleUrl(keyNameDotVariant), this.m_manifest.GetAssetBundleHash(keyNameDotVariant)))
                 {
 
                     // wait www done
