@@ -18,30 +18,9 @@ namespace SSC
         }
         static void onBuildTargetChanged()
         {
-            Debug.LogWarning("Clear editor cache, or you will see pink shader, perhaps.");
+            Debug.LogWarning("Don't forget to change Editor's Graphics API");
         }
     }
-
-    /// <summary>
-    /// BuildAssetBundlesWindowPrefs
-    /// </summary>
-    public class BuildAssetBundlesWindowPrefs : ScriptableObject
-    {
-
-        /// <summary>
-        /// EncryptionInfo
-        /// </summary>
-        [HideInInspector]
-        public BuildAssetBundlesWindow.EncryptionInfo encryptionInfo = new BuildAssetBundlesWindow.EncryptionInfo();
-
-        /// <summary>
-        /// BuildPlatforms
-        /// </summary>
-        [HideInInspector]
-        public BuildAssetBundlesWindow.BuildPlatforms buildPlatforms = new BuildAssetBundlesWindow.BuildPlatforms();
-
-    }
-
 
     /// <summary>
     /// Class for Build AssetBundles Window
@@ -228,7 +207,7 @@ namespace SSC
         /// <summary>
         /// Output path
         /// </summary>
-        string m_buildPath = "";
+        protected string m_buildPath = "";
 
         /// <summary>
         /// Scroll pos
@@ -416,7 +395,8 @@ namespace SSC
                 this.forceRefresh();
             }
 
-            EditorUtility.DisplayDialog("Build AssetBundles", ok ? "Success\n\nDon't forget to clear editor's cache if you needed." : "Failed", "OK");
+            //EditorUtility.DisplayDialog("Build AssetBundles", ok ? "Success\n\nDon't forget to clear editor's cache if you needed." : "Failed", "OK");
+            EditorUtility.DisplayDialog("Build AssetBundles", ok ? "Success" : "Failed", "OK");
 
         }
 
@@ -1033,7 +1013,7 @@ namespace SSC
         /// Save prefs
         /// </summary>
         // -----------------------------------------------------------------------------------------------
-        protected void savePrefs()
+        protected virtual void savePrefs()
         {
 
             MonoScript script = MonoScript.FromScriptableObject(this);

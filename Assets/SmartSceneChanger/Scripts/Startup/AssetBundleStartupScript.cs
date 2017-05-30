@@ -51,7 +51,7 @@ namespace SSC
         /// <summary>
         /// Start()
         /// </summary>
-        void Start()
+        protected virtual void Start()
         {
 
             this.initOnStart();

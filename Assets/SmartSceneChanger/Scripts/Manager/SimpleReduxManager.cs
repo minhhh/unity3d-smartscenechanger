@@ -1,9 +1,19 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace SSC
 {
+
+    /// <summary>
+    /// interface for onSceneLoaded
+    /// </summary>
+    public interface IResetStateOnSceneLoaded
+    {
+        void resetOnSceneLevelLoaded();
+    }
 
     /// <summary>
     /// Class for simple redux pattern
@@ -14,72 +24,85 @@ namespace SSC
         /// <summary>
         /// StateWatcher for SceneChangeState
         /// </summary>
-        StateWatcher<SceneChangeState> m_sceneStateWatcher = new StateWatcher<SceneChangeState>();
+        StateWatcher<SceneChangeState> m_sceneChangeStateWatcher = new StateWatcher<SceneChangeState>();
 
         /// <summary>
-        /// StateWatcher for WwwStartupState
+        /// StateWatcher for PauseState
         /// </summary>
-        StateWatcher<WwwStartupState> m_wwwStartupWatcher = new StateWatcher<WwwStartupState>();
+        StateWatcher<PauseState> m_pauseStateWatcher = new StateWatcher<PauseState>();
 
-        /// <summary>
-        /// StateWatcher for AssetBundleStartupState
-        /// </summary>
-        StateWatcher<AssetBundleStartupState> m_abStartupWatcher = new StateWatcher<AssetBundleStartupState>();
-
-        /// <summary>
-        /// StateWatcher for YesNoDialogState
-        /// </summary>
-        StateWatcher<YesNoDialogState> m_yesnoDialogWatcher = new StateWatcher<YesNoDialogState>();
-
-        /// <summary>
-        /// StateWatcher for OkDialogState
-        /// </summary>
-        StateWatcher<OkDialogState> m_okDialogWatcher = new StateWatcher<OkDialogState>();
-
-        /// <summary>
-        /// StateWatcher for IEnumeratorStartupState
-        /// </summary>
-        StateWatcher<IEnumeratorStartupState> m_ieStartupWatcher = new StateWatcher<IEnumeratorStartupState>();
-
-
-
-
+        // ----------------------------------------------------------------------------------------------
 
         /// <summary>
         /// StateWatcher<SceneChangeState> getter
         /// </summary>
-        public StateWatcher<SceneChangeState> SceneChangeStateWatcher { get { return this.m_sceneStateWatcher; } }
+        public StateWatcher<SceneChangeState> SceneChangeStateWatcher { get { return this.m_sceneChangeStateWatcher; } }
 
         /// <summary>
-        /// StateWatcher<WwwStartupState> getter
+        /// StateWatcher<PauseState> getter
         /// </summary>
-        public StateWatcher<WwwStartupState> WwwStartupStateWatcher { get { return this.m_wwwStartupWatcher; } }
+        public StateWatcher<PauseState> PauseStateWatcher { get { return this.m_pauseStateWatcher; } }
 
         /// <summary>
-        /// StateWatcher<AssetBundleStartupState> getter
+        /// Called in Awake
         /// </summary>
-        public StateWatcher<AssetBundleStartupState> AssetBundleStartupStateWatcher { get { return this.m_abStartupWatcher; } }
-
-        /// <summary>
-        /// StateWatcher<AssetBundleStartupState> getter
-        /// </summary>
-        public StateWatcher<IEnumeratorStartupState> IEnumeratorStartupStateWatcher { get { return this.m_ieStartupWatcher; } }
-
-        /// <summary>
-        /// StateWatcher<YesNoDialogState> getter
-        /// </summary>
-        public StateWatcher<YesNoDialogState> YesNoDialogStateWatcher { get { return this.m_yesnoDialogWatcher; } }
-
-        /// <summary>
-        /// StateWatcher<OkDialogState> getter
-        /// </summary>
-        public StateWatcher<OkDialogState> OkDialogStateWatcher { get { return this.m_okDialogWatcher; } }
-
-        /// <summary>
-        /// override
-        /// </summary>
+        // ----------------------------------------------------------------------------------------------
         protected override void initOnAwake()
         {
+
+            SceneManager.sceneLoaded += this.resetOnSceneLoaded;
+
+        }
+
+        /// <summary>
+        /// Reset states on scene loaded
+        /// </summary>
+        /// <param name="scene">Scene</param>
+        /// <param name="mode">LoadSceneMode</param>
+        // ----------------------------------------------------------------------------------------------
+        protected void resetOnSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+
+            if(mode != LoadSceneMode.Single)
+            {
+                return;
+            }
+
+            // ---------------
+
+            this.m_sceneChangeStateWatcher.state().resetOnSceneLevelLoaded();
+            this.m_pauseStateWatcher.state().resetOnSceneLevelLoaded();
+
+        }
+
+
+        /// <summary>
+        /// Add scene change state receiver action
+        /// </summary>
+        /// <param name="action">PauseState</param>
+        // ----------------------------------------------------------------------------------------------
+        public void addSceneChangeStateReceiver(Action<SceneChangeState> action)
+        {
+
+            if (action != null)
+            {
+                this.m_sceneChangeStateWatcher.addAction(action);
+            }
+
+        }
+
+        /// <summary>
+        /// Add pause state receiver action
+        /// </summary>
+        /// <param name="action">PauseState</param>
+        // ----------------------------------------------------------------------------------------------
+        public void addPauseStateReceiver(Action<PauseState> action)
+        {
+
+            if(action != null)
+            {
+                this.m_pauseStateWatcher.addAction(action);
+            }
 
         }
 

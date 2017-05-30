@@ -25,7 +25,7 @@ namespace SSC
         /// <summary>
         /// Class for IEnumerator startup
         /// </summary>
-        class IeStruct
+        protected class IeStruct
         {
 
             /// <summary>
@@ -52,36 +52,40 @@ namespace SSC
         /// <summary>
         /// List for brefore
         /// </summary>
-        List<IeStruct> m_iesListBefore = new List<IeStruct>();
+        protected List<IeStruct> m_iesListBefore = new List<IeStruct>();
 
         /// <summary>
         /// List for After
         /// </summary>
-        List<IeStruct> m_iesListAfter = new List<IeStruct>();
+        protected List<IeStruct> m_iesListAfter = new List<IeStruct>();
 
         /// <summary>
         /// The number of parallel loading coroutines
         /// </summary>
         [SerializeField]
         [Tooltip("The number of parallel loading coroutines")]
-        int m_numberOfCo = 4;
+        protected int m_numberOfCo = 4;
 
         /// <summary>
         /// Ignore error
         /// </summary>
         [SerializeField]
         [Tooltip("Ignore error")]
-        bool m_ignoreError = false;
+        protected bool m_ignoreError = false;
 
         /// <summary>
         /// error message
         /// </summary>
-        string m_error = "";
+        protected string m_error = "";
+
+        // -------------------------------------------------------------------------------------------------------
 
         /// <summary>
-        /// Progress information
+        /// Error message
         /// </summary>
-        ProgressStruct m_progress = new ProgressStruct();
+        public string errorMessage { get { return this.m_error; } }
+
+        // -------------------------------------------------------------------------------------------------------
 
         /// <summary>
         /// override
@@ -89,13 +93,7 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         protected override void initOnAwake()
         {
-
             this.m_numberOfCo = Math.Max(1, this.m_numberOfCo);
-            this.m_progress.clear(this.m_numberOfCo);
-
-            SimpleReduxManager.Instance.IEnumeratorStartupStateWatcher.addAction(this.onIEnumeratorStartupState);
-            SimpleReduxManager.Instance.SceneChangeStateWatcher.addAction(this.onSceneChangeState);
-
         }
 
         /// <summary>
@@ -125,7 +123,7 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         public int progressDenominator()
         {
-            return this.m_progress.progressDenominator;
+            return this.m_iesListBefore.Count + this.m_iesListAfter.Count;
         }
 
         /// <summary>
@@ -135,216 +133,83 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         public float progressNumerator()
         {
-            return this.m_progress.progressNumerator;
-        }
 
-        /// <summary>
-        /// Action on SceneChangeStateWatcher
-        /// </summary>
-        /// <param name="state">current state</param>
-        // -------------------------------------------------------------------------------------------------------
-        void onSceneChangeState(SceneChangeState state)
-        {
+            float ret = 0.0f;
 
-            if (state.stateEnum == SceneChangeState.StateEnum.ScenePlaying)
+            foreach(var ies in this.m_iesListBefore)
             {
-                this.m_progress.clear(this.m_numberOfCo);
+                ret += (ies.doneSuccess) ? 1.0f : ies.iess.progress();
             }
 
+            foreach (var ies in this.m_iesListAfter)
+            {
+                ret += (ies.doneSuccess) ? 1.0f : ies.iess.progress();
+            }
+
+            return ret;
+
         }
 
         /// <summary>
-        /// Clear params
+        /// Create error message for dialog
         /// </summary>
-        /// <param name="clearList">clear list</param>
+        /// <returns>error message object</returns>
         // -------------------------------------------------------------------------------------------------------
-        void clearAll(bool clearList)
+        public virtual System.Object createErrorMessage()
+        {
+
+            DialogMessages messages = new DialogMessages();
+
+            messages.category = DialogMessages.MessageCategory.Error;
+            messages.title = "IEnumerator Error";
+            messages.mainMessage = this.m_error;
+            messages.subMessage = "Retry ?";
+
+            return messages;
+        }
+
+        /// <summary>
+        /// Clear contents
+        /// </summary>
+        // -------------------------------------------------------------------------------------------------------
+        public void clearContents()
         {
 
             this.setError("");
 
-            if (clearList)
-            {
-                this.m_iesListBefore.Clear();
-                this.m_iesListAfter.Clear();
-            }
+            this.m_iesListBefore.Clear();
+            this.m_iesListAfter.Clear();
 
         }
 
         /// <summary>
-        /// Action on IEnumeratorStartupStateWatcher
+        /// Start internal IEnumerator startups
         /// </summary>
-        /// <param name="state"></param>
-        // -------------------------------------------------------------------------------------------------------
-        void onIEnumeratorStartupState(IEnumeratorStartupState state)
-        {
-
-            if (
-                state.stateEnum == IEnumeratorStartupState.StateEnum.StartBefore ||
-                state.stateEnum == IEnumeratorStartupState.StateEnum.RestartBefore
-                )
-            {
-                this.startIEnumeratorStartup(BeforeAfter.Before);
-            }
-
-            else if (
-                state.stateEnum == IEnumeratorStartupState.StateEnum.StartAfter ||
-                state.stateEnum == IEnumeratorStartupState.StateEnum.RestartAfter
-                )
-            {
-                this.startIEnumeratorStartup(BeforeAfter.After);
-            }
-
-            else if (state.stateEnum == IEnumeratorStartupState.StateEnum.Clear)
-            {
-                this.clearAll(true);
-            }
-
-            else if (state.stateEnum == IEnumeratorStartupState.StateEnum.DoneBefore)
-            {
-                this.clearAll(false);
-            }
-
-            else if (state.stateEnum == IEnumeratorStartupState.StateEnum.DoneAfter)
-            {
-                this.clearAll(true);
-            }
-
-        }
-
-        /// <summary>
-        /// Calculate progress
-        /// </summary>
-        /// <param name="updateOnlyDenominator">update only denominator</param>
-        // -------------------------------------------------------------------------------------------------------
-        void calcProgress(bool updateOnlyDenominator)
-        {
-
-            // denominator
-            {
-                this.m_progress.progressDenominator = this.m_iesListBefore.Count + this.m_iesListAfter.Count;
-            }
-
-            if (updateOnlyDenominator)
-            {
-                return;
-            }
-
-            // numerator
-            {
-
-                float numerator = 0.0f;
-
-                foreach (var ies in this.m_iesListBefore)
-                {
-                    if (ies.iess.isDone())
-                    {
-                        numerator += 1.0f;
-                    }
-                }
-
-                foreach (var ies in this.m_iesListAfter)
-                {
-                    if (ies.iess.isDone())
-                    {
-                        numerator += 1.0f;
-                    }
-                }
-
-                foreach (float val in this.m_progress.progressOfCo)
-                {
-                    numerator += val;
-                }
-
-                this.m_progress.progressNumerator = numerator;
-
-            }
-
-        }
-
-        /// <summary>
-        /// Start startup
-        /// </summary>
-        /// <param name="ba">before or after</param>
-        // -------------------------------------------------------------------------------------------------------
-        void startIEnumeratorStartup(BeforeAfter ba)
-        {
-
-            // clear
-            {
-                this.clearAll(false);
-            }
-
-            // startStarter
-            {
-                StartCoroutine(this.startStarter(ba));
-            }
-
-        }
-
-        /// <summary>
-        /// Start loading starter
-        /// </summary>
-        /// <param name="restart">restart flag</param>
+        /// <param name="ies">IeStruct</param>
+        /// <param name="doneCallback">callback when done</param>
         /// <returns>IEnumerator</returns>
         // -------------------------------------------------------------------------------------------------------
-        IEnumerator startStarter(BeforeAfter ba)
+        protected IEnumerator startIEnumeratorInternal(IeStruct ies, Action doneCallback)
         {
 
-            yield return null;
+            yield return ies.iess.startup();
 
-            List<IeStruct> list = (ba == BeforeAfter.Before) ? this.m_iesListBefore : this.m_iesListAfter;
-
-            int counter = 0;
-
-            for (int i = 0; i < this.m_numberOfCo; i++)
+            if (string.IsNullOrEmpty(ies.iess.error()))
             {
-                StartCoroutine(this.startEachCo(list, i, () =>
-                {
-                    Interlocked.Increment(ref counter);
-                }
-                ));
+                ies.doneSuccess = true;
             }
 
-            while (counter < this.m_numberOfCo)
+            else
             {
-                this.calcProgress(false);
-                yield return new WaitForSeconds(0.1f);
-            }
-
-            this.calcProgress(false);
-
-            yield return null;
-
-            this.funcAtDone(ba);
-
-        }
-
-        /// <summary>
-        /// Start parallel loading
-        /// </summary>
-        /// <param name="list">list</param>
-        /// <param name="startIndex">coroutine index</param>
-        /// <param name="doneCallback">called when done</param>
-        /// <returns>IEnumerator</returns>
-        // -------------------------------------------------------------------------------------------------------
-        IEnumerator startEachCo(List<IeStruct> list, int startIndex, Action doneCallback)
-        {
-
-            yield return null;
-
-            int size = list.Count;
-
-            for (int i = startIndex; i < size; i += this.m_numberOfCo)
-            {
-
-                if (!this.m_ignoreError && this.hasError())
+                if (!this.m_ignoreError)
                 {
-                    break;
+                    this.setError(ies.iess.error());
                 }
 
-                yield return StartCoroutine(this.startIEnumerator(list[i], startIndex));
-
+                else
+                {
+                    ies.doneSuccess = true;
+                }
             }
 
             doneCallback();
@@ -352,33 +217,63 @@ namespace SSC
         }
 
         /// <summary>
-        /// Called when all loadings have done with any reason
+        /// Start IEnumerator startups
         /// </summary>
-        /// <param name="ba">before or after</param>
+        /// <param name="ba">BeforeAfter</param>
+        /// <returns>IEnumerator</returns>
         // -------------------------------------------------------------------------------------------------------
-        void funcAtDone(BeforeAfter ba)
+        public IEnumerator startIEnumerator(BeforeAfter ba)
         {
 
-            var state = SimpleReduxManager.Instance.IEnumeratorStartupStateWatcher.state();
+            yield return null;
 
-            if (this.hasError())
+            // clear error
             {
-                state.setState(
-                    SimpleReduxManager.Instance.IEnumeratorStartupStateWatcher,
-                    (ba == BeforeAfter.Before) ? IEnumeratorStartupState.StateEnum.ErrorBefore : IEnumeratorStartupState.StateEnum.ErrorAfter,
-                    this.m_error
-                    );
+                this.setError("");
             }
 
-            else
+            List<IeStruct> list = (ba == BeforeAfter.Before) ? this.m_iesListBefore : this.m_iesListAfter;
+
+            int listCount = list.Count;
+            int listIndex = 0;
+            int workingCoCounter = 0;
+
+            while (listIndex < listCount)
             {
 
-                state.setState(
-                    SimpleReduxManager.Instance.IEnumeratorStartupStateWatcher,
-                    (ba == BeforeAfter.Before) ? IEnumeratorStartupState.StateEnum.DoneBefore : IEnumeratorStartupState.StateEnum.DoneAfter,
-                    ""
-                    );
+                if(this.hasError())
+                {
+                    break;
+                }
 
+                // -------------
+
+                if (workingCoCounter < this.m_numberOfCo)
+                {
+
+                    IeStruct ies = list[listIndex++];
+
+                    if(!ies.doneSuccess)
+                    {
+
+                        workingCoCounter++;
+
+                        StartCoroutine(this.startIEnumeratorInternal(ies, () =>
+                        {
+                            workingCoCounter--;
+                        }));
+
+                    }
+
+                }
+
+                yield return null;
+
+            }
+
+            while (workingCoCounter > 0)
+            {
+                yield return null;
             }
 
         }
@@ -388,7 +283,7 @@ namespace SSC
         /// </summary>
         /// <returns>error string is not empty</returns>
         // -------------------------------------------------------------------------------------------------------
-        bool hasError()
+        public bool hasError()
         {
             return !string.IsNullOrEmpty(this.m_error);
         }
@@ -398,7 +293,7 @@ namespace SSC
         /// </summary>
         /// <param name="error">error message</param>
         // -------------------------------------------------------------------------------------------------------
-        void setError(string error)
+        protected void setError(string error)
         {
 
             if (string.IsNullOrEmpty(error))
@@ -409,46 +304,6 @@ namespace SSC
             else if (string.IsNullOrEmpty(this.m_error))
             {
                 this.m_error = error;
-            }
-
-        }
-
-        /// <summary>
-        /// Start IEnumerator startup
-        /// </summary>
-        /// <param name="ie">IeStruct</param>
-        /// <param name="coNumber">coroutine index</param>
-        /// <returns>IEnumerator</returns>
-        // -------------------------------------------------------------------------------------------------------
-        IEnumerator startIEnumerator(IeStruct ie, int coNumber)
-        {
-
-            yield return null;
-
-            if(ie.doneSuccess)
-            {
-                yield break;
-            }
-
-            StartCoroutine(ie.iess.startupBase());
-
-            while (!ie.iess.isDone())
-            {
-                yield return null;
-                this.m_progress.progressOfCo[coNumber] = ie.iess.progress();
-            }
-
-            if (string.IsNullOrEmpty(ie.iess.error()))
-            {
-                ie.doneSuccess = true;
-            }
-
-            else
-            {
-                if(!this.m_ignoreError)
-                {
-                    this.setError(ie.iess.error());
-                }
             }
 
         }

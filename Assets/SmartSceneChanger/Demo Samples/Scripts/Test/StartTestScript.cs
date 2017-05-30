@@ -28,32 +28,35 @@ namespace SSCSample
             Application.targetFrameRate = this.m_fps;
             Invoke("loadNextScene", 1.0f);
 
-            // print warning message
-            if(UnityEngine.Random.value > 10.0f) // always false
-            {
-                Invoke("loadNextScene", 1.5f);
-            }
-
         }
 
         void loadNextScene()
         {
-            SSC.SceneChangeManager.Instance.loadNextScene(this.m_nextSceneName);
-        }
 
-#if UNITY_EDITOR
+            // SSC.SceneChangeManager.Instance.currentNowLoadingIdentifier = "NowLoading1";
+
+            SSC.SceneChangeManager.Instance.loadNextScene(this.m_nextSceneName);
+            //SSC.SceneChangeManager.Instance.loadNextScene("AAA");
+
+        }
 
         void OnValidate()
         {
+
+#if UNITY_EDITOR
 
             if (this.m_nextScene && !string.IsNullOrEmpty(this.m_nextScene.name))
             {
                 this.m_nextSceneName = this.m_nextScene.name;
             }
 
-        }
-
+            else
+            {
+                this.m_nextSceneName = "";
+            }
 #endif
+
+        }
 
     }
 

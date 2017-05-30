@@ -1,10 +1,12 @@
-﻿namespace SSC
+﻿using System;
+
+namespace SSC
 {
 
     /// <summary>
     /// SceneChangeState class
     /// </summary>
-    public class SceneChangeState
+    public class SceneChangeState : IResetStateOnSceneLoaded
     {
 
         /// <summary>
@@ -16,6 +18,8 @@
             NowLoadingIntro,
             NowLoadingMain,
             NowLoadingOutro,
+
+            [Obsolete("Obsoleted value", true)]
             InnerChange,
         }
 
@@ -27,6 +31,7 @@
         /// <summary>
         /// Next scene name
         /// </summary>
+        [Obsolete("Use SceneChangeManager.Instance.nowLoadingSceneName", true)]
         public string nextSceneName = "";
 
         /// <summary>
@@ -35,12 +40,21 @@
         /// <param name="watcher">watcher</param>
         /// <param name="_stateEnum">stateEnum</param>
         /// <param name="_nextSceneName">nextSceneName</param>
-        public void setState(StateWatcher<SceneChangeState> watcher, StateEnum _stateEnum, string _nextSceneName)
+        // ----------------------------------------------------------------------------------------------
+        public void setState(StateWatcher<SceneChangeState> watcher, StateEnum _stateEnum)
         {
             this.stateEnum = _stateEnum;
-            this.nextSceneName = _nextSceneName;
 
             watcher.sendState();
+        }
+
+        /// <summary>
+        /// Reset params on scene loaded
+        /// </summary>
+        // ----------------------------------------------------------------------------------------------
+        public void resetOnSceneLevelLoaded()
+        {
+            
         }
 
     }

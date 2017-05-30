@@ -17,7 +17,7 @@ namespace SSC
         /// <summary>
         /// Class for loading WWW
         /// </summary>
-        class WwwStruct
+        protected class WwwStruct
         {
 
             /// <summary>
@@ -65,36 +65,69 @@ namespace SSC
         /// <summary>
         /// WwwStruct list
         /// </summary>
-        List<WwwStruct> m_wwwsList = new List<WwwStruct>();
+        protected List<WwwStruct> m_wwwsList = new List<WwwStruct>();
 
         /// <summary>
         /// The number of parallel loading coroutines
         /// </summary>
         [SerializeField]
         [Tooltip("The number of parallel loading coroutines")]
-        int m_numberOfCo = 4;
+        protected int m_numberOfCo = 4;
 
         /// <summary>
         /// Ignore error
         /// </summary>
         [SerializeField]
         [Tooltip("Ignore error")]
-        bool m_ignoreError = false;
+        protected bool m_ignoreError = false;
+
+        /// <summary>
+        /// ThreadPriority
+        /// </summary>
+        [SerializeField]
+        [Tooltip("ThreadPriority")]
+        protected UnityEngine.ThreadPriority m_threadPriority = UnityEngine.ThreadPriority.Low;
+
+        /// <summary>
+        /// Error seconds for timeout
+        /// </summary>
+        [SerializeField]
+        [Tooltip("Error seconds for timeout")]
+        protected float m_noProgressTimeOutSeconds = 0.0f;
 
         /// <summary>
         /// Error message
         /// </summary>
-        string m_error = "";
+        protected string m_error = "";
 
         /// <summary>
         /// Error url
         /// </summary>
-        string m_errorUrl = "";
+        protected string m_errorUrl = "";
 
         /// <summary>
-        /// Progress information
+        /// Connection Timeout message
         /// </summary>
-        ProgressStruct m_progress = new ProgressStruct();
+        protected readonly string ConnectionTimeout = "Connection Timeout";
+
+        /// <summary>
+        /// Current co progress
+        /// </summary>
+        protected List<float> m_currentCoProgresses = new List<float>();
+
+        // -------------------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Error url
+        /// </summary>
+        public string errorUrl { get { return this.m_errorUrl; } }
+
+        /// <summary>
+        /// Error message
+        /// </summary>
+        public string errorMessage { get { return this.m_error; } }
+
+        // -------------------------------------------------------------------------------------------------------
 
         /// <summary>
         /// override
@@ -102,13 +135,8 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         protected override void initOnAwake()
         {
-
             this.m_numberOfCo = Math.Max(1, this.m_numberOfCo);
-            this.m_progress.clear(this.m_numberOfCo);
-
-            SimpleReduxManager.Instance.WwwStartupStateWatcher.addAction(this.onWwwStartupState);
-            SimpleReduxManager.Instance.SceneChangeStateWatcher.addAction(this.onSceneChangeState);
-
+            this.m_currentCoProgresses = new List<float>(new float[this.m_numberOfCo]);
         }
 
         /// <summary>
@@ -122,7 +150,6 @@ namespace SSC
         public void addSceneStartupWww(string url, Action<WWW> success_func, Action<WWW> failed_func, Action<WWW> progress_func)
         {
             this.m_wwwsList.Add(new WwwStruct(url, success_func, failed_func, progress_func));
-            this.calcProgress(true);
         }
 
         /// <summary>
@@ -132,7 +159,7 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         public int progressDenominator()
         {
-            return this.m_progress.progressDenominator;
+            return this.m_wwwsList.Count;
         }
 
         /// <summary>
@@ -142,285 +169,86 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         public float progressNumerator()
         {
-            return this.m_progress.progressNumerator;
+
+            float ret = 0.0f;
+
+            foreach (var wwws in this.m_wwwsList)
+            {
+                if(wwws.doneSuccess)
+                {
+                    ret += 1.0f;
+                }
+            }
+
+            foreach (var val in this.m_currentCoProgresses)
+            {
+                ret += val;
+            }
+
+            return ret;
+
         }
 
         /// <summary>
-        /// Action on WwwStartupStateWatcher
+        /// Create error message for dialog
         /// </summary>
-        /// <param name="state">current state</param>
+        /// <returns>error message object</returns>
         // -------------------------------------------------------------------------------------------------------
-        void onWwwStartupState(WwwStartupState state)
+        public virtual System.Object createErrorMessage()
         {
 
-            if (state.stateEnum == WwwStartupState.StateEnum.Start)
-            {
-                this.startWwwStartup();
-            }
+            DialogMessages messages = new DialogMessages();
 
-            else if (state.stateEnum == WwwStartupState.StateEnum.Restart)
-            {
-                this.startWwwStartup();
-            }
+            messages.category = DialogMessages.MessageCategory.Error;
+            messages.title = "WWW Error";
+            messages.urlIfNeeded = this.m_errorUrl;
+            messages.mainMessage = this.m_error;
+            messages.subMessage = "Retry ?";
 
-            else if (state.stateEnum == WwwStartupState.StateEnum.Clear)
-            {
-                this.clearAll(true);
-            }
-
-            else if (state.stateEnum == WwwStartupState.StateEnum.Done)
-            {
-                this.clearAll(true);
-            }
-
+            return messages;
         }
 
         /// <summary>
-        /// Action on SceneChangeStateWatcher
+        /// Clear contents
         /// </summary>
-        /// <param name="state">current state</param>
         // -------------------------------------------------------------------------------------------------------
-        void onSceneChangeState(SceneChangeState state)
-        {
-
-            if (state.stateEnum == SceneChangeState.StateEnum.ScenePlaying)
-            {
-                this.m_progress.clear(this.m_numberOfCo);
-            }
-
-        }
-
-        /// <summary>
-        /// Clear params
-        /// </summary>
-        /// <param name="clearList">clear list</param>
-        // -------------------------------------------------------------------------------------------------------
-        void clearAll(bool clearList)
+        public void clearContents()
         {
 
             this.setError("", "");
 
-            if (clearList)
-            {
-                this.m_wwwsList.Clear();
-            }
+            this.m_wwwsList.Clear();
 
-        }
-
-        /// <summary>
-        /// If error string is not empty
-        /// </summary>
-        /// <returns>error string is not empty</returns>
-        // -------------------------------------------------------------------------------------------------------
-        bool hasError()
-        {
-            return !string.IsNullOrEmpty(this.m_error);
-        }
-
-        /// <summary>
-        /// Set error message
-        /// </summary>
-        /// <param name="url">url if needed</param>
-        /// <param name="error">error message</param>
-        // -------------------------------------------------------------------------------------------------------
-        void setError(string url, string error)
-        {
-
-            if (string.IsNullOrEmpty(error))
-            {
-                this.m_errorUrl = url;
-                this.m_error = error;
-            }
-
-            else if (string.IsNullOrEmpty(this.m_error))
-            {
-                this.m_errorUrl = url;
-                this.m_error = error;
-            }
-
-        }
-
-        /// <summary>
-        /// Calculate progress
-        /// </summary>
-        /// <param name="updateOnlyDenominator">update only denominator</param>
-        // -------------------------------------------------------------------------------------------------------
-        void calcProgress(bool updateOnlyDenominator)
-        {
-
-            // denominator
-            {
-                this.m_progress.progressDenominator =  this.m_wwwsList.Count;
-            }
-
-            if (updateOnlyDenominator)
-            {
-                return;
-            }
-
-            // numerator
+            // m_currentCoProgresses
             {
 
-                float numerator = 0.0f;
-
-                foreach (WwwStruct wwws in this.m_wwwsList)
+                for (int i = this.m_currentCoProgresses.Count - 1; i >= 0; i--)
                 {
-                    if (wwws.doneSuccess)
-                    {
-                        numerator += 1.0f;
-                    }
+                    this.m_currentCoProgresses[i] = 0.0f;
                 }
 
-                foreach (float val in this.m_progress.progressOfCo)
-                {
-                    if (val < 1.0f)
-                    {
-                        numerator += val;
-                    }
-                }
-
-                this.m_progress.progressNumerator = numerator;
-
             }
 
         }
 
         /// <summary>
-        /// Start startup
-        /// </summary>
-        // -------------------------------------------------------------------------------------------------------
-        void startWwwStartup()
-        {
-
-            // clear
-            {
-                this.clearAll(false);
-            }
-
-            // startStarter
-            {
-                StartCoroutine(this.startStarter());
-            }
-
-        }
-
-        /// <summary>
-        /// Start loading starter
-        /// </summary>
-        /// <returns>IEnumerator</returns>
-        // -------------------------------------------------------------------------------------------------------
-        IEnumerator startStarter()
-        {
-
-            yield return null;
-
-            int counter = 0;
-
-            for (int i = 0; i < this.m_numberOfCo; i++)
-            {
-                StartCoroutine(this.startEachCo(i, () =>
-                {
-                    Interlocked.Increment(ref counter);
-                }
-                ));
-            }
-
-            while (counter < this.m_numberOfCo)
-            {
-                this.calcProgress(false);
-                yield return new WaitForSeconds(0.1f);
-            }
-
-            this.calcProgress(false);
-
-            yield return null;
-
-            this.funcAtDone();
-
-        }
-
-        /// <summary>
-        /// Start parallel loading
-        /// </summary>
-        /// <param name="startIndex">coroutine index</param>
-        /// <param name="doneCallback">called when done</param>
-        /// <returns>IEnumerator</returns>
-        // -------------------------------------------------------------------------------------------------------
-        IEnumerator startEachCo(int startIndex, Action doneCallback)
-        {
-
-            yield return null;
-
-            int size = this.m_wwwsList.Count;
-
-            for (int i = startIndex; i < size; i += this.m_numberOfCo)
-            {
-
-                if (this.hasError())
-                {
-                    break;
-                }
-
-                yield return this.startWwwLoading(this.m_wwwsList[i], startIndex);
-
-            }
-
-            doneCallback();
-
-        }
-
-        /// <summary>
-        /// Called when all loadings have done with any reason
-        /// </summary>
-        // -------------------------------------------------------------------------------------------------------
-        void funcAtDone()
-        {
-
-            var state = SimpleReduxManager.Instance.WwwStartupStateWatcher.state();
-
-            if (this.hasError())
-            {
-                state.setState(
-                    SimpleReduxManager.Instance.WwwStartupStateWatcher,
-                    WwwStartupState.StateEnum.Error,
-                    this.m_error,
-                    this.m_errorUrl
-                    );
-            }
-
-            else
-            {
-
-                state.setState(
-                    SimpleReduxManager.Instance.WwwStartupStateWatcher,
-                    WwwStartupState.StateEnum.Done,
-                    "",
-                    ""
-                    );
-
-            }
-
-        }
-
-        /// <summary>
-        /// Download main WWW
+        /// Start internal www loadings
         /// </summary>
         /// <param name="wwws">WwwStruct</param>
-        /// <param name="coNumber">coroutine index</param>
-        /// <returns></returns>
+        /// <param name="coNumber">coroutine number</param>
+        /// <param name="doneCallback">callback when done</param>
+        /// <returns>IEnumerator</returns>
         // -------------------------------------------------------------------------------------------------------
-        IEnumerator startWwwLoading(WwwStruct wwws, int coNumber)
+        protected IEnumerator startWwwStartupInternal(WwwStruct wwws, int coNumber, Action doneCallback)
         {
 
-            yield return null;
-
-            if (wwws.doneSuccess || this.hasError())
-            {
-                yield break;
-            }
+            float noProgressTimer = 0.0f;
+            float previousProgress = 0.0f;
 
             using (WWW www = new WWW(wwws.url))
             {
+
+                www.threadPriority = this.m_threadPriority;
 
                 // wait www done
                 {
@@ -433,7 +261,40 @@ namespace SSC
                             wwws.progressFunc(www);
                         }
 
-                        this.m_progress.progressOfCo[coNumber] = www.progress * 0.999f;
+                        // m_currentCoProgresses
+                        {
+                            this.m_currentCoProgresses[coNumber] = www.progress * 0.999f;
+                        }
+
+                        // timeout
+                        {
+
+                            if(this.m_noProgressTimeOutSeconds > 0.0f)
+                            {
+
+                                if (previousProgress == www.progress)
+                                {
+                                    noProgressTimer += Time.deltaTime;
+                                }
+
+                                else
+                                {
+                                    noProgressTimer = 0.0f;
+                                }
+
+                                previousProgress = www.progress;
+
+                                if(noProgressTimer >= this.m_noProgressTimeOutSeconds)
+                                {
+                                    this.setError(www.url, this.ConnectionTimeout);
+                                    doneCallback();
+                                    www.Dispose();
+                                    yield break;
+                                }
+
+                            }
+
+                        }
 
                         yield return null;
 
@@ -465,6 +326,8 @@ namespace SSC
                     // fail
                     else
                     {
+
+
                         if (wwws.failedFunc != null)
                         {
                             wwws.failedFunc(www);
@@ -473,6 +336,8 @@ namespace SSC
                         if (!this.m_ignoreError)
                         {
                             this.setError(www.url, www.error);
+                            doneCallback();
+                            www.Dispose();
                             yield break;
                         }
 
@@ -482,14 +347,103 @@ namespace SSC
 
             } // using
 
-
             // done
             {
-                this.m_progress.progressOfCo[coNumber] = 0.0f;
+                this.m_currentCoProgresses[coNumber] = 0.0f;
                 wwws.doneSuccess = true;
             }
 
+            doneCallback();
+
+        }
+
+        /// <summary>
+        /// Start www loadings
+        /// </summary>
+        /// <returns>IEnumerator</returns>
+        // -------------------------------------------------------------------------------------------------------
+        public IEnumerator startWwwStartup()
+        {
+
             yield return null;
+
+            // clear error
+            {
+                this.setError("", "");
+            }
+
+            int listCount = this.m_wwwsList.Count;
+            int listIndex = 0;
+            int workingCoCounter = 0;
+
+            while (listIndex < listCount)
+            {
+
+                if (this.hasError())
+                {
+                    break;
+                }
+
+                // -------------
+
+                if (workingCoCounter < this.m_numberOfCo)
+                {
+
+                    WwwStruct wwws = this.m_wwwsList[listIndex++];
+
+                    if (!wwws.doneSuccess)
+                    {
+
+                        StartCoroutine(this.startWwwStartupInternal(wwws, workingCoCounter++, () =>
+                        {
+                            workingCoCounter--;
+                        }));
+
+                    }
+
+                }
+
+                yield return null;
+
+            }
+
+            while (workingCoCounter > 0)
+            {
+                yield return null;
+            }
+
+        }
+
+        /// <summary>
+        /// If error string is not empty
+        /// </summary>
+        /// <returns>error string is not empty</returns>
+        // -------------------------------------------------------------------------------------------------------
+        public bool hasError()
+        {
+            return !string.IsNullOrEmpty(this.m_error);
+        }
+
+        /// <summary>
+        /// Set error message
+        /// </summary>
+        /// <param name="url">url if needed</param>
+        /// <param name="error">error message</param>
+        // -------------------------------------------------------------------------------------------------------
+        protected void setError(string url, string error)
+        {
+
+            if (string.IsNullOrEmpty(error))
+            {
+                this.m_errorUrl = url;
+                this.m_error = error;
+            }
+
+            else if (string.IsNullOrEmpty(this.m_error))
+            {
+                this.m_errorUrl = url;
+                this.m_error = error;
+            }
 
         }
 

@@ -18,7 +18,7 @@ namespace SSC
         /// <summary>
         /// Class for loading AssetBundle
         /// </summary>
-        class AbStruct
+        protected class AbStruct
         {
 
             /// <summary>
@@ -73,53 +73,24 @@ namespace SSC
         }
 
         /// <summary>
-        /// Class for error handling and reloading
+        /// Error message
         /// </summary>
-        class InnerState
-        {
+        protected string m_error = "";
 
-            /// <summary>
-            /// url for error
-            /// </summary>
-            public string url = "";
-
-            /// <summary>
-            /// error message
-            /// </summary>
-            public string error = "";
-
-            /// <summary>
-            /// reloading flag for new manifest detected
-            /// </summary>
-            public bool newManifestDetected = false;
-
-            /// <summary>
-            /// reloading flag for additive scene detected
-            /// </summary>
-            public bool sceneAdditiveDetected = false;
-
-            /// <summary>
-            /// Clear params
-            /// </summary>
-            public void clear()
-            {
-                this.url = "";
-                this.error = "";
-                this.newManifestDetected = false;
-                this.sceneAdditiveDetected = false;
-            }
-
-        }
+        /// <summary>
+        /// Error url
+        /// </summary>
+        protected string m_errorUrl = "";
 
         /// <summary>
         /// AssetBundles dependencies
         /// </summary>
-        Dictionary<string, AssetBundle> m_dependencies = new Dictionary<string, AssetBundle>();
+        protected Dictionary<string, AssetBundle> m_dependencies = new Dictionary<string, AssetBundle>();
 
         /// <summary>
         /// AbStruct list
         /// </summary>
-        List<AbStruct> m_absList = new List<AbStruct>();
+        protected List<AbStruct> m_absList = new List<AbStruct>();
 
         /// <summary>
         /// The number of parallel loading coroutines
@@ -151,9 +122,18 @@ namespace SSC
         protected bool m_useDecryption = false;
 
         /// <summary>
-        /// InnerState instance
+        /// ThreadPriority
         /// </summary>
-        InnerState m_is = new InnerState();
+        [SerializeField]
+        [Tooltip("ThreadPriority")]
+        protected UnityEngine.ThreadPriority m_threadPriority = UnityEngine.ThreadPriority.Low;
+
+        /// <summary>
+        /// Error seconds for timeout
+        /// </summary>
+        [SerializeField]
+        [Tooltip("Error seconds for timeout")]
+        protected float m_noProgressTimeOutSeconds = 0.0f;
 
         /// <summary>
         /// Url for manifest file
@@ -186,9 +166,43 @@ namespace SSC
         protected readonly string FailedToDecryptAssetBundle = "Failed to load AssetBundle";
 
         /// <summary>
-        /// Progress information
+        /// Connection Timeout message
         /// </summary>
-        protected ProgressStruct m_progress = new ProgressStruct();
+        protected readonly string ConnectionTimeout = "Connection Timeout";
+
+        /// <summary>
+        /// Current co progress
+        /// </summary>
+        protected List<float> m_currentCoProgresses = new List<float>();
+
+        /// <summary>
+        /// Need to reload scene by new manifest
+        /// </summary>
+        protected bool m_needReloadScene = false;
+
+        /// <summary>
+        /// AbStruct list for runtime
+        /// </summary>
+        protected List<AbStruct> m_absListRuntime = new List<AbStruct>();
+
+        /// <summary>
+        /// IEnumerator for runtime loading
+        /// </summary>
+        protected IEnumerator m_runtimeLoading = null;
+
+        // -------------------------------------------------------------------------------------------------------
+
+        /// <summary>
+        /// Error url
+        /// </summary>
+        public string errorUrl { get { return this.m_errorUrl; } }
+
+        /// <summary>
+        /// Error message
+        /// </summary>
+        public string errorMessage { get { return this.m_error; } }
+
+        // -------------------------------------------------------------------------------------------------------
 
         /// <summary>
         /// override
@@ -198,16 +212,14 @@ namespace SSC
         {
 
             this.m_numberOfCo = Math.Max(1, this.m_numberOfCo);
-            this.m_progress.clear(this.m_numberOfCo);
 
-            SimpleReduxManager.Instance.AssetBundleStartupStateWatcher.addAction(this.onAbStartupState);
-            SimpleReduxManager.Instance.SceneChangeStateWatcher.addAction(this.onSceneChangeState);
+            this.m_currentCoProgresses = new List<float>(new float[this.m_numberOfCo]);
 
 #if UNITY_EDITOR && (UNITY_ANDROID || UNITY_IOS)
 
             if(!SystemInfo.graphicsDeviceType.ToString().ToLower().Contains("opengl"))
             {
-                Debug.LogWarning("Use OpenGLES, or you will see pink shader, perhaps.");
+                Debug.LogWarning("(#if UNITY_EDITOR) Use OpenGLES, or you will see pink shader, perhaps.");
             }
 
 #endif
@@ -223,7 +235,7 @@ namespace SSC
 
 #if UNITY_EDITOR
 
-            Debug.LogWarning("You must override this function as you want.");
+            Debug.LogWarning("(#if UNITY_EDITOR) You must override this function as you want.");
 
 #endif
             // sample
@@ -270,7 +282,6 @@ namespace SSC
         public void addSceneStartupAssetBundle(string assetBundleName, string variant, Action<AssetBundle> success_func, Action<WWW> failed_func, Action<WWW> progress_func)
         {
             this.m_absList.Add(new AbStruct(assetBundleName, variant, success_func, failed_func, progress_func));
-            this.calcProgress(true);
         }
 
         /// <summary>
@@ -280,7 +291,7 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         public int progressDenominator()
         {
-            return this.m_progress.progressDenominator;
+            return this.m_absList.Count + this.m_dependencies.Count;
         }
 
         /// <summary>
@@ -290,7 +301,98 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         public float progressNumerator()
         {
-            return this.m_progress.progressNumerator;
+
+            float ret = 0.0f;
+
+            foreach (var abs in this.m_absList)
+            {
+                if (abs.doneSuccess)
+                {
+                    ret += 1.0f;
+                }
+            }
+
+            foreach (var depend in this.m_dependencies)
+            {
+                if (depend.Value)
+                {
+                    ret += 1.0f;
+                }
+            }
+
+            foreach (var val in this.m_currentCoProgresses)
+            {
+                ret += val;
+            }
+
+            return ret;
+
+        }
+
+        /// <summary>
+        /// Create error message for dialog
+        /// </summary>
+        /// <returns>error message object</returns>
+        // -------------------------------------------------------------------------------------------------------
+        public virtual System.Object createErrorMessage()
+        {
+
+            DialogMessages messages = new DialogMessages();
+
+            messages.category = DialogMessages.MessageCategory.Error;
+            messages.title = "AssetBundle Error";
+            messages.urlIfNeeded = this.m_errorUrl;
+            messages.mainMessage = this.m_error;
+            messages.subMessage = "Retry ?";
+
+            return messages;
+        }
+
+        /// <summary>
+        /// Clear contents
+        /// </summary>
+        // -------------------------------------------------------------------------------------------------------
+        public void clearContents()
+        {
+
+            this.setError("", "");
+
+            this.m_absList.Clear();
+
+            StopAllCoroutines();
+
+            // m_dependencies
+            {
+
+                foreach (var kv in this.m_dependencies)
+                {
+
+                    if (kv.Value)
+                    {
+                        kv.Value.Unload(false);
+                    }
+
+                }
+
+                this.m_dependencies.Clear();
+
+            }
+
+            // m_currentCoProgresses
+            {
+
+                for (int i = this.m_currentCoProgresses.Count - 1; i >= 0; i--)
+                {
+                    this.m_currentCoProgresses[i] = 0.0f;
+                }
+
+            }
+
+            // runtime
+            {
+                this.m_absListRuntime.Clear();
+            }
+
         }
 
         /// <summary>
@@ -299,7 +401,7 @@ namespace SSC
         /// <param name="nameDotVariant">AssetBundle name</param>
         /// <returns>if found, return AssetBundle, if not, return null</returns>
         // -------------------------------------------------------------------------------------------------------
-        AssetBundle assetBundleFromDependencies(string nameDotVariant)
+        protected AssetBundle assetBundleFromDependencies(string nameDotVariant)
         {
             if (this.m_dependencies.ContainsKey(nameDotVariant))
             {
@@ -309,94 +411,11 @@ namespace SSC
         }
 
         /// <summary>
-        /// Action on AssetBundleStartupStateWatcher
-        /// </summary>
-        /// <param name="state">current state</param>
-        // -------------------------------------------------------------------------------------------------------
-        void onAbStartupState(AssetBundleStartupState state)
-        {
-
-            if (state.stateEnum == AssetBundleStartupState.StateEnum.Start)
-            {
-                this.startAbStartup(false);
-            }
-
-            else if (state.stateEnum == AssetBundleStartupState.StateEnum.Restart)
-            {
-                this.startAbStartup(true);
-            }
-
-            else if (state.stateEnum == AssetBundleStartupState.StateEnum.Clear)
-            {
-                this.clearAll(true);
-            }
-
-            else if (state.stateEnum == AssetBundleStartupState.StateEnum.Done)
-            {
-                this.clearAll(true);
-            }
-
-        }
-
-        /// <summary>
-        /// Action on SceneChangeStateWatcher
-        /// </summary>
-        /// <param name="state">current state</param>
-        // -------------------------------------------------------------------------------------------------------
-        void onSceneChangeState(SceneChangeState state)
-        {
-
-            if (state.stateEnum == SceneChangeState.StateEnum.ScenePlaying)
-            {
-                this.m_progress.clear(this.m_numberOfCo);
-            }
-
-        }
-
-        /// <summary>
-        /// Clear params
-        /// </summary>
-        /// <param name="clearAssetBundle">clear already loaded AssetBundles</param>
-        // -------------------------------------------------------------------------------------------------------
-        void clearAll(bool clearAssetBundles)
-        {
-
-            // m_is
-            {
-                this.m_is.clear();
-            }
-
-            // m_absList
-            {
-
-                if(clearAssetBundles)
-                {
-
-                    foreach (string key in new List<string>(this.m_dependencies.Keys))
-                    {
-
-                        if (this.m_dependencies[key])
-                        {
-                            this.m_dependencies[key].Unload(false);
-                        }
-
-                    }
-
-                    this.m_dependencies.Clear();
-                    this.m_absList.Clear();
-
-                }
-
-            }
-
-        }
-
-        /// <summary>
         /// If manifest is available
         /// </summary>
         /// <returns>manifest is available</returns>
         // -------------------------------------------------------------------------------------------------------
-        bool hasManifest()
+        protected bool hasManifest()
         {
             return this.m_manifest;
         }
@@ -406,9 +425,9 @@ namespace SSC
         /// </summary>
         /// <returns>error string is not empty</returns>
         // -------------------------------------------------------------------------------------------------------
-        bool hasError()
+        public bool hasError()
         {
-            return !string.IsNullOrEmpty(this.m_is.error);
+            return !string.IsNullOrEmpty(this.m_error);
         }
 
         /// <summary>
@@ -417,72 +436,19 @@ namespace SSC
         /// <param name="url">url if needed</param>
         /// <param name="error">error message</param>
         // -------------------------------------------------------------------------------------------------------
-        void setError(string url, string error)
+        protected void setError(string url, string error)
         {
 
-            if(string.IsNullOrEmpty(error))
+            if (string.IsNullOrEmpty(error))
             {
-                this.m_is.url = url;
-                this.m_is.error = error;
+                this.m_errorUrl = url;
+                this.m_error = error;
             }
 
-            else if(string.IsNullOrEmpty(this.m_is.error))
+            else if (string.IsNullOrEmpty(this.m_error))
             {
-                this.m_is.url = url;
-                this.m_is.error = error;
-            }
-            
-        }
-
-        /// <summary>
-        /// Calculate progress
-        /// </summary>
-        /// <param name="updateOnlyDenominator">update only denominator</param>
-        // -------------------------------------------------------------------------------------------------------
-        void calcProgress(bool updateOnlyDenominator)
-        {
-
-            // denominator
-            {
-                this.m_progress.progressDenominator =  this.m_dependencies.Count + this.m_absList.Count;
-            }
-
-            if (updateOnlyDenominator)
-            {
-                return;
-            }
-
-            // numerator
-            {
-
-                float numerator = 0.0f;
-
-                foreach (var kv in this.m_dependencies)
-                {
-                    if(kv.Value)
-                    {
-                        numerator += 1.0f;
-                    }
-                }
-
-                foreach (AbStruct abs in this.m_absList)
-                {
-                    if (abs.doneSuccess)
-                    {
-                        numerator += 1.0f;
-                    }
-                }
-
-                foreach (float val in this.m_progress.progressOfCo)
-                {
-                    if (val < 1.0f)
-                    {
-                        numerator += val;
-                    }
-                }
-
-                this.m_progress.progressNumerator = numerator;
-
+                this.m_errorUrl = url;
+                this.m_error = error;
             }
 
         }
@@ -505,12 +471,16 @@ namespace SSC
         /// <param name="newManifest">new manifest hashes</param>
         /// <returns>IEnumerator</returns>
         // -------------------------------------------------------------------------------------------------------
-        IEnumerator hasDifferenceOfOldAndNewManifest(Dictionary<string, Hash128> currentManifest, Dictionary<string, Hash128> newManifest)
+        protected IEnumerator hasDifferenceOfOldAndNewManifest(
+            Dictionary<string, Hash128> currentManifest,
+            Dictionary<string, Hash128> newManifest,
+            Action<bool> callback
+            )
         {
 
             if (currentManifest.Count <= 0 || newManifest.Count <= 0)
             {
-                this.m_is.newManifestDetected = false;
+                callback(false);
                 yield break;
             }
 
@@ -519,7 +489,7 @@ namespace SSC
 
                 if (currentManifest.Count != currentManifest.Count)
                 {
-                    this.m_is.newManifestDetected = true;
+                    callback(false);
                     yield break;
                 }
 
@@ -535,7 +505,7 @@ namespace SSC
 
                     if (!newManifest.ContainsKey(kv.Key) || currentManifest[kv.Key] != newManifest[kv.Key])
                     {
-                        this.m_is.newManifestDetected = true;
+                        callback(true);
                         yield break;
                     }
 
@@ -548,154 +518,255 @@ namespace SSC
 
             }
 
-            this.m_is.newManifestDetected = false;
+            callback(false);
 
         }
 
         /// <summary>
-        /// Start startup
+        /// Load all ABs internal function
         /// </summary>
-        /// <param name="restart">restart flag</param>
+        /// <param name="keyNameDotVariant">key.variant</param>
+        /// <param name="absCombined">cobined ABs</param>
+        /// <param name="coNumber">coroutine number</param>
+        /// <param name="sceneAdditiveCallback">additive scene detected callback</param>
+        /// <param name="doneCallback">callback when done</param>
+        /// <returns></returns>
         // -------------------------------------------------------------------------------------------------------
-        void startAbStartup(bool restart)
+        protected IEnumerator loadAllMainAssetBundleInternal(
+            string keyNameDotVariant,
+            List<AbStruct> absCombined,
+            int coNumber,
+            Action<AssetBundle> sceneAdditiveCallback,
+            Action doneCallback
+            )
         {
 
-            if (this.m_absList.Count <= 0)
+            yield return null;
+
+            // Caching
             {
-                var state = SimpleReduxManager.Instance.AssetBundleStartupStateWatcher.state();
-                state.setState(
-                    SimpleReduxManager.Instance.AssetBundleStartupStateWatcher,
-                    AssetBundleStartupState.StateEnum.Done,
-                    "",
-                    ""
-                    );
-                return;
+                while (!Caching.ready)
+                {
+                    yield return null;
+                }
             }
 
-            // ------------------------
+            AssetBundle from_dependencies = this.assetBundleFromDependencies(keyNameDotVariant);
+
+            if (from_dependencies)
+            {
+
+                foreach (var abs in absCombined)
+                {
+
+                    if (abs.successFunc != null && !abs.doneSuccess)
+                    {
+                        abs.successFunc(from_dependencies);
+                    }
+
+                    this.m_currentCoProgresses[coNumber] = 0.0f;
+                    abs.doneSuccess = true;
+
+                }
+
+                doneCallback();
+                yield break;
+
+            }
+
+            float noProgressTimer = 0.0f;
+            float previousProgress = 0.0f;
+
+            using (WWW abwww = WWW.LoadFromCacheOrDownload(this.createAssetBundleUrl(keyNameDotVariant), this.m_manifest.GetAssetBundleHash(keyNameDotVariant)))
+            {
+
+                abwww.threadPriority = this.m_threadPriority;
+
+                // wait www done
+                {
+
+                    while (!abwww.isDone)
+                    {
+
+                        foreach (var abs in absCombined)
+                        {
+                            if (abs.progressFunc != null)
+                            {
+                                abs.progressFunc(abwww);
+                            }
+                        }
+
+                        // m_currentCoProgresses
+                        {
+                            this.m_currentCoProgresses[coNumber] = abwww.progress * 0.999f;
+                        }
+
+                        // timeout
+                        {
+
+                            if (this.m_noProgressTimeOutSeconds > 0.0f)
+                            {
+
+                                if (previousProgress == abwww.progress)
+                                {
+                                    noProgressTimer += Time.deltaTime;
+                                }
+
+                                else
+                                {
+                                    noProgressTimer = 0.0f;
+                                }
+
+                                previousProgress = abwww.progress;
+
+                                if (noProgressTimer >= this.m_noProgressTimeOutSeconds)
+                                {
+                                    this.setError(abwww.url, this.ConnectionTimeout);
+                                    doneCallback();
+                                    yield break;
+                                }
+
+                            }
+
+                        }
+
+                        yield return null;
+
+                    }
+
+                    foreach (var abs in absCombined)
+                    {
+                        if (abs.progressFunc != null)
+                        {
+                            abs.progressFunc(abwww);
+                        }
+                    }
+
+                    yield return null;
+
+                } // wait
+
+                // success or fail
+                {
+
+                    // success
+                    if (string.IsNullOrEmpty(abwww.error))
+                    {
+
+                        AssetBundle decrypted = null;
+
+                        yield return this.decryptAssetBundle(abwww.assetBundle, (ab) =>
+                        {
+                            decrypted = ab;
+                        }
+                        );
+
+                        if (decrypted)
+                        {
+
+                            if (decrypted.isStreamedSceneAssetBundle)
+                            {
+
+                                sceneAdditiveCallback(decrypted);
+
+#if UNITY_EDITOR
+                                if (absCombined.Count >= 2)
+                                {
+                                    Debug.LogWarning("(#if UNITY_EDITOR) Duplicated AssetBundle scene is not supported : " + keyNameDotVariant);
+                                }
+#endif
+
+                            }
+
+                            foreach (var abs in absCombined)
+                            {
+                                if (abs.successFunc != null && !abs.doneSuccess)
+                                {
+                                    abs.successFunc(decrypted);
+                                }
+                            }
+
+                            if (!decrypted.isStreamedSceneAssetBundle)
+                            {
+                                decrypted.Unload(false);
+                            }
+
+                        }
+
+                        else
+                        {
+                            this.setError(abwww.url, this.FailedToDecryptAssetBundle);
+                            doneCallback();
+                            yield break;
+                        }
+
+                    }
+
+                    // fail
+                    else
+                    {
+
+                        foreach (var abs in absCombined)
+                        {
+                            if (abs.failedFunc != null)
+                            {
+                                abs.failedFunc(abwww);
+                            }
+                        }
+
+                        if (!this.m_ignoreErrorExceptManifest)
+                        {
+                            this.setError(abwww.url, abwww.error);
+                            doneCallback();
+                            yield break;
+                        }
+
+                    }
+
+                } // success or fail
+
+                // reset progress
+                {
+                    this.m_currentCoProgresses[coNumber] = 0.0f;
+                }
+
+                foreach (var abs in absCombined)
+                {
+                    abs.doneSuccess = true;
+                }
+
+            } // using
+
+            doneCallback();
+
+        }
+
+        /// <summary>
+        /// Load all ABs
+        /// </summary>
+        /// <param name="additiveScenes">Detected additive scene ABs</param>
+        /// <returns>IEnumerator</returns>
+        // -------------------------------------------------------------------------------------------------------
+        protected IEnumerator loadAllMainAssetBundle(Action<List<AssetBundle>> additiveScenes)
+        {
+
+            yield return null;
 
             // clear
-            {
-                this.clearAll(false);
-            }
+            Dictionary<string, List<AbStruct>> combined = this.createCombinedAbList();
 
-            // startStarter
-            {
-                StartCoroutine(this.startStarter(restart));
-            }
+            int workingCoCounter = 0;
 
-        }
+            List<string> combinedKeys = new List<string>(combined.Keys);
 
-        /// <summary>
-        /// Restart loading
-        /// </summary>
-        // -------------------------------------------------------------------------------------------------------
-        void restartAbStartup()
-        {
-            this.startAbStartup(true);
-        }
+            List<AssetBundle> detectedAdditiveScenes = new List<AssetBundle>();
 
-        /// <summary>
-        /// Start loading starter
-        /// </summary>
-        /// <param name="restart">restart flag</param>
-        /// <returns>IEnumerator</returns>
-        // -------------------------------------------------------------------------------------------------------
-        IEnumerator startStarter(bool restart)
-        {
+            bool skip = true;
 
-            if (!restart)
-            {
-                this.setManifestFileAndFolderUrl();
-            }
+            int listCount = combinedKeys.Count;
+            int listIndex = 0;
 
-            if(!this.hasManifest() || !restart)
-            {
-                yield return this.updateManifest(false);
-            }
-
-            if (!this.hasError())
-            {
-                yield return this.solveDependenciesKeys();
-            }
-
-            if (!this.hasError())
-            {
-
-                int counter = 0;
-                List<string> depend_keys = new List<string>(this.m_dependencies.Keys);
-
-                for (int i = 0; i < this.m_numberOfCo; i++)
-                {
-                    StartCoroutine(this.startEachCoForDependencies(i, depend_keys, () =>
-                    {
-                        Interlocked.Increment(ref counter);
-                    }
-                    ));
-                }
-
-                while (counter < this.m_numberOfCo)
-                {
-                    this.calcProgress(false);
-                    yield return new WaitForSeconds(0.1f);
-                }
-
-            }
-
-            //
-            if (!this.hasError())
-            {
-
-                Dictionary<string, List<AbStruct>> dict = this.createCombinedAbList();
-                List<string> keys = new List<string>(dict.Keys);
-
-                int counter = 0;
-                for (int i = 0; i < this.m_numberOfCo; i++)
-                {
-                    StartCoroutine(this.startEachCoForMain(i, keys, dict, () =>
-                    {
-                        Interlocked.Increment(ref counter);
-                    }
-                    ));
-                }
-
-                while (counter < this.m_numberOfCo)
-                {
-                    this.calcProgress(false);
-                    yield return new WaitForSeconds(0.1f);
-                }
-
-            }
-
-            if (!this.hasError() && this.m_checkManifestAfterLoading && !this.m_is.sceneAdditiveDetected)
-            {
-                yield return this.updateManifest(true);
-            }
-
-            this.calcProgress(false);
-
-            yield return null;
-
-            this.funcAtDone();
-
-        }
-
-        /// <summary>
-        /// Start parallel loading of dependencies
-        /// </summary>
-        /// <param name="startIndex">coroutine index</param>
-        /// <param name="dependKeys">dependencies urls</param>
-        /// <param name="doneCallback">called when done</param>
-        /// <returns>IEnumerator</returns>
-        // -------------------------------------------------------------------------------------------------------
-        IEnumerator startEachCoForDependencies(int startIndex, List<string> dependKeys, Action doneCallback)
-        {
-
-            yield return null;
-
-            int size = dependKeys.Count;
-
-            for (int i = startIndex; i < size; i += this.m_numberOfCo)
+            while (listIndex < listCount)
             {
 
                 if (this.hasError())
@@ -703,7 +774,147 @@ namespace SSC
                     break;
                 }
 
-                yield return this.loadDependency(dependKeys[i], this.m_dependencies[dependKeys[i]], startIndex);
+                // -------------
+
+                if (workingCoCounter < this.m_numberOfCo)
+                {
+
+                    string key = combinedKeys[listIndex++];
+
+                    foreach (var val in combined[key])
+                    {
+                        if (!val.doneSuccess)
+                        {
+                            skip = false;
+                            break;
+                        }
+                    }
+
+                    if (!skip)
+                    {
+
+                        StartCoroutine(this.loadAllMainAssetBundleInternal(
+                            key,
+                            combined[key],
+                            workingCoCounter++,
+                            (additive) =>
+                            {
+                                detectedAdditiveScenes.Add(additive);
+                            },
+                            () =>
+                            {
+                                workingCoCounter--;
+                            }
+                            ));
+
+                    }
+
+                }
+
+                yield return null;
+
+            }
+
+            while (workingCoCounter > 0)
+            {
+                yield return null;
+            }
+
+            additiveScenes(detectedAdditiveScenes);
+
+        }
+
+        /// <summary>
+        /// Load dependency
+        /// </summary>
+        /// <param name="key">assetbundle name</param>
+        /// <param name="coNumber">coroutine number</param>
+        /// <param name="doneCallback">callback when done</param>
+        /// <returns>IEnumerator</returns>
+        // -------------------------------------------------------------------------------------------------------
+        protected IEnumerator loadDependency(Dictionary<string, AssetBundle> dependenciesTarget, string key, int coNumber, Action doneCallback)
+        {
+
+            yield return null;
+
+            if (!this.m_manifest)
+            {
+                doneCallback();
+                yield break;
+            }
+
+            // Caching
+            {
+                while (!Caching.ready)
+                {
+                    yield return null;
+                }
+            }
+
+            float noProgressTimer = 0.0f;
+            float previousProgress = 0.0f;
+
+            using (WWW dependwww = WWW.LoadFromCacheOrDownload(this.createAssetBundleUrl(key), this.m_manifest.GetAssetBundleHash(key)))
+            {
+
+                dependwww.threadPriority = this.m_threadPriority;
+
+                while (!dependwww.isDone)
+                {
+
+                    // m_currentCoProgresses
+                    {
+                        this.m_currentCoProgresses[coNumber] = dependwww.progress * 0.999f;
+                    }
+
+                    // timeout
+                    {
+
+                        if (this.m_noProgressTimeOutSeconds > 0.0f)
+                        {
+
+                            if (previousProgress == dependwww.progress)
+                            {
+                                noProgressTimer += Time.deltaTime;
+                            }
+
+                            else
+                            {
+                                noProgressTimer = 0.0f;
+                            }
+
+                            previousProgress = dependwww.progress;
+
+                            if (noProgressTimer >= this.m_noProgressTimeOutSeconds)
+                            {
+                                this.setError(dependwww.url, this.ConnectionTimeout);
+                                doneCallback();
+                                yield break;
+                            }
+
+                        }
+
+                    }
+
+                    yield return null;
+                }
+
+                if (string.IsNullOrEmpty(dependwww.error))
+                {
+
+                    yield return this.decryptAssetBundle(dependwww.assetBundle, (ab) =>
+                    {
+                        this.m_currentCoProgresses[coNumber] = 0.0f;
+                        dependenciesTarget[key] = ab;
+                    }
+                    );
+
+                }
+
+                else
+                {
+                    this.setError(dependwww.url, dependwww.error);
+                }
 
             }
 
@@ -712,37 +923,147 @@ namespace SSC
         }
 
         /// <summary>
-        /// Start parallel loading of main AssetBundle
+        /// Load all dependencies
         /// </summary>
-        /// <param name="startIndex">coroutine inde</param>
-        /// <param name="keys">urls</param>
-        /// <param name="combined">to avoid duplicated loading</param>
-        /// <param name="doneCallback">called when done</param>
         /// <returns>IEnumerator</returns>
         // -------------------------------------------------------------------------------------------------------
-        IEnumerator startEachCoForMain(int startIndex, List<string> keys, Dictionary<string, List<AbStruct>> combined, Action doneCallback)
+        protected IEnumerator loadAllDependencies(Dictionary<string, AssetBundle> dependenciesTarget)
         {
 
             yield return null;
 
-            int size = combined.Count;
+            int workingCoCounter = 0;
 
-            for (int i = startIndex; i < size; i += this.m_numberOfCo)
+            List<string> dependKeys = new List<string>(dependenciesTarget.Keys);
+
+            int listCount = dependKeys.Count;
+            int listIndex = 0;
+
+            while (listIndex < listCount)
             {
 
-                if (this.hasError() || this.m_is.sceneAdditiveDetected)
+                if (this.hasError())
                 {
                     break;
                 }
 
-                yield return this.startAssetBundleLoading(keys[i], combined[keys[i]], startIndex, () =>
+                // -------------
+
+                if (workingCoCounter < this.m_numberOfCo)
                 {
-                    this.m_is.sceneAdditiveDetected = true;
-                });
+
+                    string key = dependKeys[listIndex++];
+
+                    if (!dependenciesTarget[key])
+                    {
+                        StartCoroutine(this.loadDependency(dependenciesTarget, key, workingCoCounter++, () =>
+                        {
+                            workingCoCounter--;
+                        }));
+                    }
+
+                }
+
+                yield return null;
 
             }
 
-            doneCallback();
+            while (workingCoCounter > 0)
+            {
+                yield return null;
+            }
+
+        }
+
+        // -------------------------------------------------------------------------------------------------------
+        public IEnumerator startAbStartup(bool restartForAdditive, Action<List<AssetBundle>> additiveScenes, Action<bool> reloadScene)
+        {
+
+            yield return null;
+
+            // clear error
+            {
+                this.setError("", "");
+            }
+
+            if (this.m_absList.Count <= 0)
+            {
+                yield break;
+            }
+
+            // ------------------
+
+            bool detectedAdditiveScene = false;
+
+            //
+            {
+
+                if (!restartForAdditive)
+                {
+                    this.setManifestFileAndFolderUrl();
+                }
+
+                if (!this.hasManifest() || !restartForAdditive)
+                {
+                    yield return this.updateManifest(null);
+                }
+
+                if (this.hasError())
+                {
+                    yield break;
+                }
+
+                // solveStartupDependenciesKeys
+                {
+
+                    yield return this.solveStartupDependenciesKeys();
+
+                    if (this.hasError())
+                    {
+                        yield break;
+                    }
+
+                }
+
+                // loadAllDependencies
+                {
+
+                    yield return this.loadAllDependencies(this.m_dependencies);
+
+                    if (this.hasError())
+                    {
+                        yield break;
+                    }
+
+                }
+
+                // loadAllMainAssetBundle
+                {
+
+                    yield return this.loadAllMainAssetBundle((ret) =>
+                    {
+                        additiveScenes(ret);
+                        detectedAdditiveScene = ret.Count > 0;
+                    });
+
+                    if (this.hasError())
+                    {
+                        yield break;
+                    }
+
+                }
+
+            }
+
+            if (this.m_checkManifestAfterLoading && !detectedAdditiveScene)
+            {
+
+                yield return this.updateManifest((ret) =>
+                {
+                    reloadScene(ret);
+                });
+
+            }
 
         }
 
@@ -751,7 +1072,7 @@ namespace SSC
         /// </summary>
         /// <returns>combined list</returns>
         // -------------------------------------------------------------------------------------------------------
-        Dictionary<string, List<AbStruct>> createCombinedAbList()
+        protected Dictionary<string, List<AbStruct>> createCombinedAbList()
         {
 
             Dictionary<string, List<AbStruct>> ret = new Dictionary<string, List<AbStruct>>();
@@ -775,7 +1096,7 @@ namespace SSC
 
                 if (kv.Value.Count >= 2)
                 {
-                    Debug.LogWarning("Duplicated AssetBundle loading is not recommended (but, no problem) : " + kv.Key);
+                    Debug.LogWarning("(#if UNITY_EDITOR) Duplicated AssetBundle loading is not recommended (but, no problem) : " + kv.Key);
                 }
 
             }
@@ -783,56 +1104,6 @@ namespace SSC
 #endif
 
             return ret;
-
-        }
-
-        /// <summary>
-        /// Called when all loadings have done with any reason
-        /// </summary>
-        // -------------------------------------------------------------------------------------------------------
-        void funcAtDone()
-        {
-
-            var ab_state = SimpleReduxManager.Instance.AssetBundleStartupStateWatcher.state();
-
-            if (this.hasError())
-            {
-                ab_state.setState(
-                    SimpleReduxManager.Instance.AssetBundleStartupStateWatcher,
-                    AssetBundleStartupState.StateEnum.Error,
-                    this.m_is.error,
-                    this.m_is.url
-                    );
-            }
-
-            else if (this.m_is.sceneAdditiveDetected)
-            {
-                Invoke("restartAbStartup", 0.1f);
-            }
-
-            else if (this.m_is.newManifestDetected)
-            {
-
-                SceneChangeState sc_state = SimpleReduxManager.Instance.SceneChangeStateWatcher.state();
-
-                sc_state.setState(
-                    SimpleReduxManager.Instance.SceneChangeStateWatcher,
-                    SceneChangeState.StateEnum.InnerChange,
-                    sc_state.nextSceneName
-                    );
-            }
-
-            else
-            {
-
-                ab_state.setState(
-                    SimpleReduxManager.Instance.AssetBundleStartupStateWatcher,
-                    AssetBundleStartupState.StateEnum.Done,
-                    "",
-                    ""
-                    );
-
-            }
 
         }
 
@@ -845,11 +1116,11 @@ namespace SSC
         protected virtual byte[] decryptBinaryData(TextAsset textAsset)
         {
 
-            if(!textAsset)
+            if (!textAsset)
             {
                 return new byte[] { };
             }
-            
+
             return Funcs.DecryptBinaryData(textAsset.bytes, "PassworDPassworD");
 
         }
@@ -861,7 +1132,7 @@ namespace SSC
         /// <param name="ret">return function</param>
         /// <returns>IEnumerator</returns>
         // -------------------------------------------------------------------------------------------------------
-        IEnumerator decryptAssetBundle(AssetBundle assetBundle, Action<AssetBundle> ret)
+        protected IEnumerator decryptAssetBundle(AssetBundle assetBundle, Action<AssetBundle> ret)
         {
 
             yield return null;
@@ -889,7 +1160,7 @@ namespace SSC
 
                 yield return null;
 
-                if(decrypted != null && decrypted.Length > 0)
+                if (decrypted != null && decrypted.Length > 0)
                 {
 
                     AssetBundleCreateRequest abcr = AssetBundle.LoadFromMemoryAsync(decrypted);
@@ -924,7 +1195,7 @@ namespace SSC
         /// <param name="check">if true, compare old and new</param>
         /// <returns>IEnumerator</returns>
         // -------------------------------------------------------------------------------------------------------
-        IEnumerator updateManifest(bool check)
+        protected IEnumerator updateManifest(Action<bool> callback)
         {
 
             yield return null;
@@ -942,11 +1213,14 @@ namespace SSC
                 if (this.m_manifestAssetBundle)
                 {
 
-                    foreach (string str in this.m_manifest.GetAllAssetBundles())
+                    if (this.m_manifest)
                     {
-                        if (!old_key_hash.ContainsKey(str))
+                        foreach (string str in this.m_manifest.GetAllAssetBundles())
                         {
-                            old_key_hash.Add(str, this.m_manifest.GetAssetBundleHash(str));
+                            if (!old_key_hash.ContainsKey(str))
+                            {
+                                old_key_hash.Add(str, this.m_manifest.GetAssetBundleHash(str));
+                            }
                         }
                     }
 
@@ -955,13 +1229,48 @@ namespace SSC
                 }
 
             }
-            
+
+            float noProgressTimer = 0.0f;
+            float previousProgress = 0.0f;
+
             using (WWW www = new WWW(this.m_assetBundleManifestFileUrl))
             {
 
+                www.threadPriority = this.m_threadPriority;
+
                 while (!www.isDone)
                 {
+
+                    // timeout
+                    {
+
+                        if (this.m_noProgressTimeOutSeconds > 0.0f)
+                        {
+
+                            if (previousProgress == www.progress)
+                            {
+                                noProgressTimer += Time.deltaTime;
+                            }
+
+                            else
+                            {
+                                noProgressTimer = 0.0f;
+                            }
+
+                            previousProgress = www.progress;
+
+                            if (noProgressTimer >= this.m_noProgressTimeOutSeconds)
+                            {
+                                this.setError(www.url, this.ConnectionTimeout);
+                                yield break;
+                            }
+
+                        }
+
+                    }
+
                     yield return null;
+
                 }
 
                 if (string.IsNullOrEmpty(www.error))
@@ -976,7 +1285,7 @@ namespace SSC
                         }
                         );
 
-                        if(this.m_manifestAssetBundle)
+                        if (this.m_manifestAssetBundle)
                         {
 
                             AssetBundleRequest request = this.m_manifestAssetBundle.LoadAssetAsync("AssetBundleManifest", typeof(AssetBundleManifest));
@@ -1024,9 +1333,14 @@ namespace SSC
             } // using
 
             // check
-            if (check)
+            if (callback != null)
             {
-                yield return this.hasDifferenceOfOldAndNewManifest(old_key_hash, new_key_hash);
+
+                yield return this.hasDifferenceOfOldAndNewManifest(old_key_hash, new_key_hash, (ret) =>
+                {
+                    callback(ret);
+                });
+
             }
 
         }
@@ -1038,10 +1352,13 @@ namespace SSC
         /// <param name="nameDotVariant">origin</param>
         /// <returns>IEnumerator</returns>
         // -------------------------------------------------------------------------------------------------------
-        IEnumerator allDependenciesNames(List<string> ret, string nameDotVariant)
+        protected IEnumerator allDependenciesNames(List<string> ret, string nameDotVariant, int counterForSleep)
         {
 
-            yield return null;
+            if (counterForSleep++ % 100 == 0)
+            {
+                yield return null;
+            }
 
             if (!this.m_manifest || this.hasError())
             {
@@ -1053,7 +1370,7 @@ namespace SSC
                 if (!ret.Contains(depend))
                 {
                     ret.Add(depend);
-                    yield return this.allDependenciesNames(ret, depend);
+                    yield return this.allDependenciesNames(ret, depend, counterForSleep);
                 }
             }
 
@@ -1066,7 +1383,7 @@ namespace SSC
         /// </summary>
         /// <returns>IEnumerator</returns>
         // -------------------------------------------------------------------------------------------------------
-        IEnumerator solveDependenciesKeys()
+        protected IEnumerator solveStartupDependenciesKeys()
         {
 
             yield return null;
@@ -1076,13 +1393,15 @@ namespace SSC
                 yield break;
             }
 
+            int counterForSleep = 0;
+
             foreach (AbStruct abs in this.m_absList)
             {
 
-                List<string> dependencies = new List<string>();
-                yield return this.allDependenciesNames(dependencies, abs.nameDotVariant);
+                List<string> dependenciesKeys = new List<string>();
+                yield return this.allDependenciesNames(dependenciesKeys, abs.nameDotVariant, counterForSleep);
 
-                foreach (string depend in dependencies)
+                foreach (string depend in dependenciesKeys)
                 {
                     if (!this.m_dependencies.ContainsKey(depend))
                     {
@@ -1094,20 +1413,19 @@ namespace SSC
 
         }
 
+
         /// <summary>
-        /// Download dependencies
+        /// Load AssetBundle in runtime
         /// </summary>
-        /// <param name="key">AssetBundle name of dependency</param>
-        /// <param name="assetBundle">AssetBundle if already loaded</param>
-        /// <param name="coNumber">coroutine index</param>
+        /// <param name="abs">AbStruct</param>
         /// <returns>IEnumerator</returns>
         // -------------------------------------------------------------------------------------------------------
-        IEnumerator loadDependency(string key, AssetBundle assetBundle, int coNumber)
+        protected IEnumerator loadAssetBundleInRuntimeInternal(AbStruct abs)
         {
 
             yield return null;
 
-            if (assetBundle || this.hasError())
+            if (!this.m_manifest)
             {
                 yield break;
             }
@@ -1120,222 +1438,327 @@ namespace SSC
                 }
             }
 
-            using (WWW dependwww = WWW.LoadFromCacheOrDownload(this.createAssetBundleUrl(key), this.m_manifest.GetAssetBundleHash(key)))
+            float noProgressTimer = 0.0f;
+            float previousProgress = 0.0f;
+
+            using (WWW abwww = WWW.LoadFromCacheOrDownload(this.createAssetBundleUrl(abs.nameDotVariant), this.m_manifest.GetAssetBundleHash(abs.nameDotVariant)))
             {
 
-                while (!dependwww.isDone)
-                {
-                    this.m_progress.progressOfCo[coNumber] = dependwww.progress * 0.999f;
-                    yield return null;
-                }
+                abwww.threadPriority = this.m_threadPriority;
 
-                if (string.IsNullOrEmpty(dependwww.error))
+                // wait www done
                 {
 
-                    yield return this.decryptAssetBundle(dependwww.assetBundle, (ab) =>
+                    while (!abwww.isDone)
                     {
-                        this.m_progress.progressOfCo[coNumber] = 0.0f;
-                        this.m_dependencies[key] = ab;
+
+                        if (abs.progressFunc != null)
+                        {
+                            abs.progressFunc(abwww);
+                        }
+
+                        // timeout
+                        {
+
+                            if (this.m_noProgressTimeOutSeconds > 0.0f)
+                            {
+
+                                if (previousProgress == abwww.progress)
+                                {
+                                    noProgressTimer += Time.deltaTime;
+                                }
+
+                                else
+                                {
+                                    noProgressTimer = 0.0f;
+                                }
+
+                                previousProgress = abwww.progress;
+
+                                if (noProgressTimer >= this.m_noProgressTimeOutSeconds)
+                                {
+                                    this.setError(abwww.url, this.ConnectionTimeout);
+                                    yield break;
+                                }
+
+                            }
+
+                        }
+
+                        yield return null;
+
                     }
-                    );
 
-                }
+                    if (abs.progressFunc != null)
+                    {
+                        abs.progressFunc(abwww);
+                    }
 
-                else
+                    yield return null;
+
+                } // wait
+
+                // success or fail
                 {
-                    this.setError(dependwww.url, dependwww.error);
-                }
 
+                    // success
+                    if (string.IsNullOrEmpty(abwww.error))
+                    {
+
+                        AssetBundle decrypted = null;
+
+                        yield return this.decryptAssetBundle(abwww.assetBundle, (ab) =>
+                        {
+                            decrypted = ab;
+                        }
+                        );
+
+                        if (decrypted)
+                        {
+
+                            if (decrypted.isStreamedSceneAssetBundle)
+                            {
+
+                                foreach (string str in decrypted.GetAllScenePaths())
+                                {
+
+                                    var aoForAdditive = SceneManager.LoadSceneAsync(Path.GetFileNameWithoutExtension(str), LoadSceneMode.Additive);
+
+                                    while (!aoForAdditive.isDone)
+                                    {
+                                        yield return null;
+                                    }
+
+                                }
+
+                            }
+
+                            if (abs.successFunc != null)
+                            {
+                                abs.successFunc(decrypted);
+                            }
+
+                            abs.doneSuccess = true;
+
+                            decrypted.Unload(false);
+
+                        }
+
+                        else
+                        {
+
+                            if (!this.m_ignoreErrorExceptManifest)
+                            {
+                                this.setError(abwww.url, this.FailedToDecryptAssetBundle);
+                            }
+
+                            if (abs.failedFunc != null)
+                            {
+                                abs.failedFunc(abwww);
+                            }
+
+                            yield break;
+
+                        }
+
+                    }
+
+                    // fail
+                    else
+                    {
+
+                        if (!this.m_ignoreErrorExceptManifest)
+                        {
+                            this.setError(abwww.url, abwww.error);
+                        }
+
+                        if (abs.failedFunc != null)
+                        {
+                            abs.failedFunc(abwww);
+                        }
+
+                        yield break;
+
+                    }
+
+                } // success or fail
+
+            } // using
+
+        }
+
+        /// <summary>
+        /// Resume runtime loading
+        /// </summary>
+        // -------------------------------------------------------------------------------------------------------
+        protected void resumeLoadingAssetBundleInRuntime()
+        {
+
+            this.setError("", "");
+
+            if (this.m_runtimeLoading == null)
+            {
+                this.m_runtimeLoading = this.loadAssetBundleInRuntimeIE();
+                StartCoroutine(this.m_runtimeLoading);
             }
 
         }
 
         /// <summary>
-        /// Download main AssetBundle
+        /// Add AbStruct ro list
         /// </summary>
-        /// <param name="keyNameDotVariant">AssetBundle name</param>
-        /// <param name="absCombined">combined list to avoid duplicated loading</param>
-        /// <param name="coNumber">coroutine index</param>
-        /// <param name="sceneAdditiveCallback">callback when scene additive detected</param>
-        /// <returns>IEnumerator</returns>
+        /// <param name="name">name</param>
+        /// <param name="variant">variant</param>
+        /// <param name="successFunc">successFunc</param>
+        /// <param name="failedFunc">failedFunc</param>
+        /// <param name="progressFunc">progressFunc</param>
         // -------------------------------------------------------------------------------------------------------
-        IEnumerator startAssetBundleLoading(string keyNameDotVariant, List<AbStruct> absCombined, int coNumber, Action sceneAdditiveCallback)
+        public void loadAssetBundleInRuntime(
+            string name,
+            string variant,
+            Action<AssetBundle> successFunc,
+            Action<WWW> failedFunc,
+            Action<WWW> progressFunc
+            )
+        {
+
+            this.m_absListRuntime.Add(new AbStruct(name, variant, successFunc, failedFunc, progressFunc));
+
+            if (this.m_runtimeLoading == null && !this.hasError())
+            {
+                this.m_runtimeLoading = this.loadAssetBundleInRuntimeIE();
+                StartCoroutine(this.m_runtimeLoading);
+            }
+
+        }
+
+        /// <summary>
+        /// Load AssetBundle in runtime
+        /// </summary>
+        /// <param name="keyNameDotVariant"></param>
+        /// <param name="successFunc"></param>
+        /// <param name="failedFunc"></param>
+        /// <param name="progressFunc"></param>
+        /// <returns></returns>
+            // -------------------------------------------------------------------------------------------------------
+        public IEnumerator loadAssetBundleInRuntimeIE()
         {
 
             yield return null;
 
-            if (absCombined.Count <= 0)
+            if (!this.m_manifest)
             {
-                yield break;
-            }
 
-            AbStruct last = absCombined.Last();
+                yield return this.updateManifest(null);
 
-            if (last.doneSuccess || this.hasError())
-            {
-                yield break;
-            }
-
-            // Caching
-            {
-                while (!Caching.ready)
+                if (!this.m_manifest)
                 {
-                    yield return null;
-                }
-            }
-
-            AssetBundle from_dependencies = this.assetBundleFromDependencies(keyNameDotVariant);
-
-            if (from_dependencies)
-            {
-
-                foreach (var abs in absCombined)
-                {
-
-                    if (abs.successFunc != null && !abs.doneSuccess)
-                    {
-                        abs.successFunc(from_dependencies);
-                    }
-
-                    this.m_progress.progressOfCo[coNumber] = 0.0f;
-                    abs.doneSuccess = true;
-
+                    this.m_runtimeLoading = null;
+                    DialogManager.Instance.showYesNoDialog(
+                        this.createErrorMessage(),
+                        this.resumeLoadingAssetBundleInRuntime,
+                        SceneChangeManager.Instance.backToTitleSceneWithOkDialog
+                        );
+                    yield break;
                 }
 
             }
 
-            else
+            // ----------------------
+
+            while (this.m_absListRuntime.Count > 0)
             {
-                
-                using (WWW abwww = WWW.LoadFromCacheOrDownload(this.createAssetBundleUrl(keyNameDotVariant), this.m_manifest.GetAssetBundleHash(keyNameDotVariant)))
+
+                AbStruct abs = this.m_absListRuntime[0];
+
+                // ---------------
+
+                List<string> dependenciesKeys = new List<string>();
+                Dictionary<string, AssetBundle> dependenciesTarget = new Dictionary<string, AssetBundle>();
+
+                // allDependenciesNames
+                {
+                    int counterForSleep = 0;
+                    yield return this.allDependenciesNames(dependenciesKeys, abs.nameDotVariant, counterForSleep);
+                }
+
+                if (this.hasError() && !this.m_ignoreErrorExceptManifest)
+                {
+                    this.m_runtimeLoading = null;
+                    DialogManager.Instance.showYesNoDialog(
+                        this.createErrorMessage(),
+                        this.resumeLoadingAssetBundleInRuntime,
+                        SceneChangeManager.Instance.backToTitleSceneWithOkDialog
+                        );
+                    yield break;
+                }
+
+                foreach (string depend in dependenciesKeys)
+                {
+                    if (!dependenciesTarget.ContainsKey(depend))
+                    {
+                        dependenciesTarget.Add(depend, null);
+                    }
+                }
+
+                // loadAllDependencies
+                {
+                    yield return this.loadAllDependencies(dependenciesTarget);
+                }
+
+                if (this.hasError() && !this.m_ignoreErrorExceptManifest)
+                {
+                    this.m_runtimeLoading = null;
+                    DialogManager.Instance.showYesNoDialog(
+                        this.createErrorMessage(),
+                        this.resumeLoadingAssetBundleInRuntime,
+                        SceneChangeManager.Instance.backToTitleSceneWithOkDialog
+                        );
+                    yield break;
+                }
+
+                // loadAssetBundleRuntimeInternal
+                {
+                    yield return this.loadAssetBundleInRuntimeInternal(abs);
+                }
+
+                // clear dependencies
                 {
 
-                    // wait www done
+                    foreach (var kv in dependenciesTarget)
                     {
 
-                        while (!abwww.isDone)
+                        if (kv.Value)
                         {
-
-                            foreach (var abs in absCombined)
-                            {
-                                if (abs.progressFunc != null)
-                                {
-                                    abs.progressFunc(abwww);
-                                }
-                            }
-
-                            this.m_progress.progressOfCo[coNumber] = abwww.progress * 0.999f;
-
-                            yield return null;
-
+                            kv.Value.Unload(false);
                         }
 
-                        foreach (var abs in absCombined)
-                        {
-                            if (abs.progressFunc != null)
-                            {
-                                abs.progressFunc(abwww);
-                            }
-                        }
-
-                        yield return null;
-
-                    } // wait
-
-                    // success or fail
-                    {
-
-                        // success
-                        if (string.IsNullOrEmpty(abwww.error))
-                        {
-
-                            AssetBundle decrypted = null;
-
-                            yield return this.decryptAssetBundle(abwww.assetBundle, (ab) =>
-                            {
-                                decrypted = ab;
-                            }
-                            );
-
-                            if(decrypted)
-                            {
-
-                                if (decrypted.isStreamedSceneAssetBundle)
-                                {
-
-                                    sceneAdditiveCallback();
-
-                                    foreach (string str in decrypted.GetAllScenePaths())
-                                    {
-                                        var ao = SceneManager.LoadSceneAsync(Path.GetFileNameWithoutExtension(str), LoadSceneMode.Additive);
-                                        while (!ao.isDone)
-                                        {
-                                            yield return null;
-                                        }
-                                    }
-
-#if UNITY_EDITOR
-                                    if(absCombined.Count >= 2)
-                                    {
-                                        Debug.LogWarning("Duplicated scene was not supported.");
-                                    }
-#endif
-
-                                }
-
-                                foreach (var abs in absCombined)
-                                {
-                                    if (abs.successFunc != null && !abs.doneSuccess)
-                                    {
-                                        abs.successFunc(decrypted);
-                                    }
-                                }
-
-                                decrypted.Unload(false);
-
-                            }
-
-                            else
-                            {
-                                this.setError(abwww.url, this.FailedToDecryptAssetBundle);
-                                yield break;
-                            }
-
-                        }
-
-                        // fail
-                        else
-                        {
-
-                            foreach (var abs in absCombined)
-                            {
-                                if (abs.failedFunc != null && !abs.doneSuccess)
-                                {
-                                    abs.failedFunc(abwww);
-                                }
-                            }
-
-                            if (!this.m_ignoreErrorExceptManifest)
-                            {
-                                this.setError(abwww.url, abwww.error);
-                                yield break;
-                            }
-
-                        }
-
-                    } // success or fail
-
-                    foreach (var abs in absCombined)
-                    {
-                        this.m_progress.progressOfCo[coNumber] = 0.0f;
-                        abs.doneSuccess = true;
                     }
 
-                } // using
+                    dependenciesTarget.Clear();
+                }
 
-            } // else
+                if (this.hasError() && !this.m_ignoreErrorExceptManifest)
+                {
+                    this.m_runtimeLoading = null;
+                    DialogManager.Instance.showYesNoDialog(
+                        this.createErrorMessage(),
+                        this.resumeLoadingAssetBundleInRuntime,
+                        SceneChangeManager.Instance.backToTitleSceneWithOkDialog
+                        );
+                    yield break;
+                }
 
-        } // startAssetBundleLoading
+                // remove 0
+                {
+                    this.m_absListRuntime.RemoveAt(0);
+                }
+
+            }
+
+            this.m_runtimeLoading = null;
+
+        }
 
     }
 

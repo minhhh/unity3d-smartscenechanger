@@ -9,13 +9,24 @@ namespace SSCSample
     {
 
         [SerializeField]
+        bool m_usePause = true;
+
+        [SerializeField]
         bool m_errorForTest = false;
 
         SSC.SceneChangeState m_refSceneChangeState = null;
 
+        bool m_pause = false;
+
         protected override void initOnStart()
         {
             this.m_refSceneChangeState = SSC.SimpleReduxManager.Instance.SceneChangeStateWatcher.state();
+            SSC.SimpleReduxManager.Instance.addPauseStateReceiver(this.onPauseState);
+        }
+
+        void onPauseState(SSC.PauseState pState)
+        {
+            this.m_pause = pState.pause;
         }
 
         public override IEnumerator startup()
@@ -45,6 +56,11 @@ namespace SSCSample
         void Update()
         {
 
+            if(this.m_usePause && this.m_pause)
+            {
+                return;
+            }
+
             if (
                 this.m_refSceneChangeState.stateEnum == SSC.SceneChangeState.StateEnum.NowLoadingOutro ||
                 this.m_refSceneChangeState.stateEnum == SSC.SceneChangeState.StateEnum.ScenePlaying
@@ -54,6 +70,7 @@ namespace SSCSample
             }
 
         }
+
 
     }
 

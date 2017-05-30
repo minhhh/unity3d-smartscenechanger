@@ -31,7 +31,12 @@ namespace SSC
         /// <param name="action">add action</param>
         public void addAction(Action<T> action)
         {
-            this.m_actionList.Add(action);
+
+            if(action != null)
+            {
+                this.m_actionList.Add(action);
+            }
+            
         }
 
         /// <summary>
@@ -57,10 +62,30 @@ namespace SSC
         /// </summary>
         public void sendState()
         {
-            foreach (Action<T> action in this.m_actionList)
+
+            Action<T> action = null;
+
+            for (int i = this.m_actionList.Count - 1; i >= 0; i--)
             {
+
+                action = this.m_actionList[i];
+
+                if(action.Target == null)
+                {
+                    this.m_actionList.RemoveAt(i);
+                    continue;
+                }
+
+                else if((action.Target is UnityEngine.Object) && (action.Target.Equals(null)))
+                {
+                    this.m_actionList.RemoveAt(i);
+                    continue;
+                }
+
                 action(this.m_state);
+
             }
+
         }
 
     }

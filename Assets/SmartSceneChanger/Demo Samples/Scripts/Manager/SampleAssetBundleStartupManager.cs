@@ -9,33 +9,64 @@ namespace SSCSample
     {
 
         [SerializeField]
-        string m_encryptedManifestFileUrl = "http://localhost:50002/windows.encrypted.unity3d/encrypted/windows.encrypted.unity3d";
+        string m_decryptionPassword = "PassworDPassworD";
 
+        [TextArea]
         [SerializeField]
-        string m_manifestFileUrl = "http://localhost:50002/windows.unity3d/windows.unity3d";
+        string m_iosManifestFileUrl = "http://localhost:50002/ios.encrypted.unity3d/encrypted/ios.encrypted.unity3d";
+
+        [TextArea]
+        [SerializeField]
+        string m_androidManifestFileUrl = "http://localhost:50002/android.encrypted.unity3d/encrypted/android.encrypted.unity3d";
+
+        [TextArea]
+        [SerializeField]
+        string m_winManifestFileUrl = "http://localhost:50002/windows.encrypted.unity3d/encrypted/windows.encrypted.unity3d";
+
+        // -------------------------------------------------------------------------------------------------------
+
+        public string iosManifestFileUrl { get { return this.m_iosManifestFileUrl; } set { this.m_iosManifestFileUrl = value; } }
+
+        public string androidManifestFileUrl { get { return this.m_androidManifestFileUrl; } set { this.m_androidManifestFileUrl = value; } }
+
+        public string winManifestFileUrl { get { return this.m_winManifestFileUrl; } set { this.m_winManifestFileUrl = value; } }
+
+        // -------------------------------------------------------------------------------------------------------
 
         // -------------------------------------------------------------------------------------------------------
         protected override void setManifestFileAndFolderUrl()
         {
 
-            Debug.LogWarning("You must override this function as you want. This sample code is only for one OS.");
+            string manifestFileUrl = "";
 
-            string manifestFileUrl = (this.m_useDecryption) ? this.m_encryptedManifestFileUrl : this.m_manifestFileUrl;
+#if UNITY_IOS
+        
+            manifestFileUrl = this.m_iosManifestFileUrl;
+
+#elif UNITY_ANDROID
+        
+            manifestFileUrl = this.m_androidManifestFileUrl;
+
+#else
+
+            manifestFileUrl = this.m_winManifestFileUrl;
+
+#endif
 
             this.m_assetBundleManifestFileUrl = manifestFileUrl;
             this.m_assetBundleManifestFolderUrl = manifestFileUrl.Substring(0, manifestFileUrl.LastIndexOf('/') + 1);
 
-            // from streamingAssetsPath exsample
-            if (UnityEngine.Random.value > 10.0f) // always false
-            {
-                this.m_assetBundleManifestFileUrl =
-                    "file:///" + Application.streamingAssetsPath + "/windows.encrypted.unity3d/encrypted/" + "windows.encrypted.unity3d"
-                    ;
+            //// from streamingAssetsPath exsample
+            //if (UnityEngine.Random.value > 10.0f) // always false
+            //{
+            //    this.m_assetBundleManifestFileUrl =
+            //        "file:///" + Application.streamingAssetsPath + "/windows.encrypted.unity3d/encrypted/" + "windows.encrypted.unity3d"
+            //        ;
 
-                this.m_assetBundleManifestFolderUrl
-                    = "file:///" + Application.streamingAssetsPath + "/windows.encrypted.unity3d/encrypted/"
-                    ;
-            }
+            //    this.m_assetBundleManifestFolderUrl
+            //        = "file:///" + Application.streamingAssetsPath + "/windows.encrypted.unity3d/encrypted/"
+            //        ;
+            //}
 
         }
 
@@ -54,8 +85,18 @@ namespace SSCSample
                 return new byte[] { };
             }
 
-            return SSC.Funcs.DecryptBinaryData(textAsset.bytes, "PassworDPassworD");
+            return SSC.Funcs.DecryptBinaryData(textAsset.bytes, this.m_decryptionPassword);
 
+        }
+
+        /// <summary>
+        /// Create error message for dialog
+        /// </summary>
+        /// <returns>error message object</returns>
+        // -------------------------------------------------------------------------------------------------------
+        public override System.Object createErrorMessage()
+        {
+            return base.createErrorMessage();
         }
 
     }

@@ -8,15 +8,14 @@ namespace SSC
     /// <summary>
     /// Singleton MonoBehaviour
     /// </summary>
-    /// <typeparam name="T"></typeparam>
+    /// <typeparam name="T">class</typeparam>
     public abstract class SingletonMonoBehaviour<T> : MonoBehaviour where T : SingletonMonoBehaviour<T>
     {
 
         /// <summary>
         /// Singleton instance
         /// </summary>
-        protected static T instance;
-
+        static T instance;
 
         /// <summary>
         /// static T instance
@@ -25,7 +24,7 @@ namespace SSC
         {
             get
             {
-                if (instance == null)
+                if (instance == null && !isQuitting)
                 {
                     instance = (T)FindObjectOfType(typeof(T));
 
@@ -46,13 +45,18 @@ namespace SSC
         /// </summary>
         protected abstract void initOnAwake();
 
+        /// <summary>
+        /// Now quitting
+        /// </summary>
+        static bool isQuitting = false;
+
         //------------------------------------
 
         /// <summary>
         /// Awake()
         /// </summary>
         //-----------------------------------------------------------------------
-        protected void Awake()
+        protected virtual void Awake()
         {
 
             if (!this.checkInstance())
@@ -69,7 +73,7 @@ namespace SSC
         /// </summary>
         /// <returns>if instance is this, return true.</returns>
         //-----------------------------------------------------------------------
-        protected bool checkInstance()
+        bool checkInstance()
         {
             if (instance == null)
             {
@@ -81,9 +85,22 @@ namespace SSC
                 return true;
             }
 
+
+#if UNITY_EDITOR
+            Debug.LogWarning("(#if UNITY_EDITOR) Destroy the object because an instance alresdy exists : " + this.gameObject.name);
+#endif
             Destroy(this.gameObject);
 
             return false;
+        }
+
+        /// <summary>
+        /// OnApplicationQuit
+        /// </summary>
+        //-----------------------------------------------------------------------
+        protected virtual void OnApplicationQuit()
+        {
+            isQuitting = true;
         }
 
     }

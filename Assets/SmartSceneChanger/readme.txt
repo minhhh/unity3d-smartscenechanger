@@ -8,7 +8,29 @@ https://bitbucket.org/ciitt/unity3d-smartscenechanger
 [Smart Scene Changer] is script assets to change scene with showing now loading screen and load any startup contents like WWW or AssetBundle in background.
 
 ----
-## Features
+## Asset Store
+https://www.assetstore.unity3d.com/jp/#!/content/80061
+
+----
+## Youtube
+https://youtu.be/a0S9U4syaYw
+
+----
+## Features (ver2)
+* (ver2 is NOT compatible with ver1)
+* (Code refactoring)
+* (Add MIT license text)
+* New dialog manager
+* Common UI manager
+* Scene UI manager
+* Loading AssetBundle in runtime
+* Controling pause state
+* Fix progress bug
+* Fix SSC.SimpleReduManager bug
+* Fix BuildAssetBundlesWindowPrefs editor reference bug
+
+----
+## Features (ver1, ver2)
 * Scene change with now loading screen
 * Scene change with AssetBundle loading in background
 * Scene change with WWW loading in background
@@ -40,29 +62,16 @@ Tools -> SSC -> Sample Build AssetBundles Window
 Open [SSC Demo Init Scene] and select [SmartSceneChangerSample] object.  
 Find [SampleAssetBundleStartupManager] script and set parameter values below.
 
-* Encrypted Manifest File Url (in case of [Use Decryption] is true)
-* Manifest File Url (in case of [Use Decryption] is false)
+* Ios Manifest File Url (for iOS)
+* Android Manifest File Url (for Android)
+* Win Manifest File Url (for Windows)
 
-(or override script as you want)  
-(if you changed [Use Decryption], clear cache.)
+(or override AssetBundleStartupManager script as you want)  
 
 ### Activate sample WWW loading script
 Open [SSC Sample Scene] and select [sample www startup] object.  
 Find [SampleWwwStartupScript] script and set [Url] parameter value (url to image file).  
-Activate this script.
-
-### Check Scenes
-* Open [SSC Demo Init Scene] and check [SmartSceneChangerSample] object.  
-This is a singleton prefab for scene changing.
-
-* Open [SSC Sample Scene] and check objects that have a name "sample".  
-These are startup scripts of the scene.
-    
-* Open [Additive Scene 01] and [Additive Scene 02].  
-These are the additive scenes from AssetBundle.
-
-* Open [SSC Dummy Title].  
-This scene will be loaded when scene change failed.
+Activate this script.  
 
 ### Start
 Open [SSC Demo Init Scene] and play.  
@@ -71,107 +80,90 @@ Open [SSC Demo Init Scene] and play.
 ----
 ## How to use and implement startup scripts
 
-### How to change scene
+* IEnumeratorStartupScript for IEnumerator startup.  
+See SSC Sample Scene -> sample ie startup -> SampleIEnumeratorStartupScript
 
-* Code
-SSC.SceneChangeManager.Instance.loadNextScene("scene_name");
+* WwwStartupScript for WWW startup loading.  
+See SSC Sample Scene -> sample www startup -> SampleAssetBundleStartupScript
 
-* Sample scene, object, script  
-SSC Demo Init Scene -> Start -> StartTestScript
-
-### Now loading contents
-
-* Override [NowLoadingBaseScript], and implement abstarct functions.  
-And put your object to [SceneChangeManager].
-
-* Sample scene, object, script  
-SSC Demo Init Scene -> NowLoading Panel Standard -> SampleNowLoadingStandardScript  
-SSC Demo Init Scene -> NowLoading Panel Stencil -> SampleNowLoadingStencilScript
-
-### YesNo dialog contents
-
-Yesno dialog is used for showing error message from [Smart Scene Changer].  
-If yes clicked, restart from where it failed.  
-If no clicked, show ok dalog and back to title scene.
-
-* Override [YesNoDialogBaseScript], and implement abstarct functions.  
-And put your object to [DialogManager].
-
-* Sample scene, object, script  
-SSC Demo Init Scene -> Yesno Dialog -> SampleYesNoDialogScript
-
-### Ok dialog contents
-
-Ok dialog is called from YesNo dialog.
-
-* Override [OkDialogBaseScript], and implement abstarct functions.  
-And put your object to [DialogManager].
-
-* Sample scene, object, script  
-SSC Demo Init Scene -> Ok Dialog -> SampleOkDialogScript
-
-### Loading AssetBundles at start of scene
-
-* Override [AssetBundleStartupScript], and implement abstarct functions.  
-Overrided script is added to [AssetBundleStartupManager] automatically.
-
-* Sample scene, object, script  
-SSC Sample Scene -> sample ab scene startup -> SampleAssetBundleStartupScript  
-SSC Sample Scene -> sample ab startup -> SampleAssetBundleStartupScript
-
-### Loading WWW at start of scene
-
-* Override [WwwStartupScript], and implement abstarct functions.  
-Overrided script is added to [WwwStartupManager] automatically.
-
-* Sample scene, object, script  
-SSC Sample Scene -> sample www startup -> SampleAssetBundleStartupScript
-
-### Start IEnumerator at start of scene
-
-* Override [IEnumeratorStartupScript], and implement abstarct functions.  
-Overrided script is added to [IEnumeratorStartupManager] automatically.
-
-* Sample scene, object, script  
-SSC Sample Scene -> sample ie startup -> SampleIEnumeratorStartupScript
-
-### Implement how to deal with AssetBundle manifest url, AssetBundle url, and decrypting AssetBundle.
-
-* Override [AssetBundleStartupManager], and implement virtual functions.
-
-* Sample scene, object, script  
-SSC Demo Init Scene -> SmartSceneChangerSample -> SampleAssetBundleStartupManager
-
-### Implement how to choose now loading object
-
-* Override [SceneChangeManager], and implement virtual functions.
-
-* Sample scene, object, script  
-SSC Demo Init Scene -> SmartSceneChangerSample -> SampleSceneChangeManager
-
-### Create a manager prefab
-
-Copy [SmartSceneChangerBase] prefab and implement the prefab with referring to [SmartSceneChangerSample] prefab.
-    Create first scene and put the prefab into the scene.
-
-### Create scenes
-
-Create scenes with referring to [SSC Sample Scene].
-    Startup scripts are automatically added to each manager at start of the scene.
+* AssetBundleStartupScript for AssetBundle startup loading.  
+See [SSC Sample Scene -> sample ab startup -> SampleAssetBundleStartupScript]  
+See [SSC Sample Scene -> sample ab scene startup -> SampleAssetBundleStartupScript]  
 
 ----
-## Flow of scene change
+## Customize Startup Manager
 
-* Start intro of now loading
-* Start main loop of now loading
+Override startup managers.  
+
+See [SSC Demo Init Scene -> Smart Scene Changer Sample -> SampleAssetBundleStartupManager] for AssetBundle startup.  
+See [SSC Demo Init Scene -> Smart Scene Changer Sample -> SampleWwwStartupManager] for WWW startup.  
+See [SSC Demo Init Scene -> Smart Scene Changer Sample -> SampleIEnumeratorStartupManager] for IEnumerator startup.  
+
+----
+## Flow of changing scene
+
+* Start showing nowloading UI
 * Start [UnloadUnusedAssets]
 * Start [LoadSceneAsync]
 * Start loading all of [IEnumeratorStartupScript(before)]
 * Start loading all of [AssetBundleStartupScript]
+* (If AssetBundle additive scene was detected, restart from IEnumeratorStartupScript(before)])
 * Start loading all of [WwwStartupScript]
 * Start loading all of [IEnumeratorStartupScript(after)]
-* Wait for main loop of now loading has finished
-* Start outro of now loading
+* Start hiding nowloading UI
+
+----
+## Loading AssetBundle in runtime
+
+See [SSC Sample Scene -> Runtime AB Loader Test -> RuntimeLoadABScript]  
+
+----
+## CommonUiManager(DontDestroyOnLoad) and SceneUiManager(Not DontDestroyOnLoad)
+
+UI object is controlled by [UiControllScript].
+Override [UiControllScript] and add it to CommonUiManager or SceneUiManager with UI identifier you wanted.  
+
+### How to show UI
+
+SSC.CommonUiManager.Instance.showUi("idebtifier", ----);  
+SSC.SceneUiManager.Instance.showUi("idebtifier", ----);  
+
+See [SSC Demo Init Scene -> Smart Scene Changer Sample -> CommonUiManager]  
+See [SSC Demo Init Scene -> Scene Canvas -> SceneUiManager]  
+See [SSC Sample Scene -> Scene Canvas -> SceneUiManager]  
+See [SSC Sample Scene -> Scene Canvas -> SampleUITestScript]  
+
+### Selectable
+
+Selectable is used for UI Navigation.  
+If valid object is set, the object is selected when showing.  
+
+----
+## Customize Dialog
+
+Override [DialogUiControllScript] and add it to DialogManager.  
+
+See [SSC Demo Init Scene -> Smart Scene Changer Sample -> SampleDialogManager]  
+See [SSC Demo Init Scene -> Smart Scene Changer Sample -> Canvas -> Dialogs -> Yes No Dialog -> SimpleDialogUiControllerScript]  
+See [SSC Demo Init Scene -> Smart Scene Changer Sample -> Canvas -> Dialogs -> Ok Dialog -> SimpleDialogUiControllerScript]  
+
+### How to show dialog
+
+DialogManager.Instance.showOkDialog(----);  
+DialogManager.Instance.showYesNoDialog(----);  
+
+----
+## Pause state
+
+### Receive
+
+SSC.SimpleReduxManager.Instance.addPauseStateReceiver(<function>);  
+See [SSC Sample Scene -> sample ie startup -> SampleIEnumeratorStartupScript]  
+
+### Send
+
+var pState = SimpleReduxManager.Instance.PauseStateWatcher.state();  
+pState.setState(SimpleReduxManager.Instance.PauseStateWatcher, bool);  
 
 ----
 ## Tools

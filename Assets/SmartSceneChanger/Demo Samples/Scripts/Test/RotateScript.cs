@@ -14,13 +14,29 @@ namespace SSCSample
 
         SSC.SceneChangeState m_refSceneChangeState = null;
 
+        bool m_pause = false;
+
         void Start()
         {
             this.m_refSceneChangeState = SSC.SimpleReduxManager.Instance.SceneChangeStateWatcher.state();
+
+            SSC.SimpleReduxManager.Instance.addPauseStateReceiver(this.onPauseState);
+        }
+
+        void onPauseState(SSC.PauseState pState)
+        {
+            this.m_pause = pState.pause;
         }
 
         void Update()
         {
+
+            if(this.m_pause)
+            {
+                return;
+            }
+
+            // ---------------------
 
             if (this.m_type == 0)
             {

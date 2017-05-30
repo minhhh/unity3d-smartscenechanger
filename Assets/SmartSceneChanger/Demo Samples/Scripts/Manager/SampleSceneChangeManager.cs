@@ -8,22 +8,14 @@ namespace SSCSample
     public class SampleSceneChangeManager : SSC.SceneChangeManager
     {
 
-        [SerializeField]
-        [Range(0, 1)]
-        int m_index = 0;
-
-        protected override SSC.NowLoadingBaseScript chooseNowLoading()
+        /// <summary>
+        /// Back to title messages
+        /// </summary>
+        /// <returns>message</returns>
+        // -------------------------------------------------------------------------------------------------------
+        public override System.Object backToTitleMessages()
         {
-
-            int count = this.refNowloadings.Count;
-
-            if (count <= 0)
-            {
-                return null;
-            }
-
-            return this.refNowloadings[this.m_index];
-
+            return base.backToTitleMessages();
         }
 
     }
