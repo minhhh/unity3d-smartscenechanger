@@ -1,4 +1,6 @@
-4d158bb (HEAD -> master, tag: v1.0.1, origin/master) Fix : use Hash128 in LoadFromCacheOrDownload
+3aabfdb (HEAD -> master, tag: v2.0.0, origin/master) ver2
+fd3e148 Update : changelog.txt
+4d158bb (tag: v1.0.1) Fix : use Hash128 in LoadFromCacheOrDownload
 747cb36 README.md edited online with Bitbucket
 9a8c4ec README.md edited online with Bitbucket
 747c6f6 README.md edited online with Bitbucket
