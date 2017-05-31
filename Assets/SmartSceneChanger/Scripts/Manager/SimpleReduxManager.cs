@@ -24,12 +24,12 @@ namespace SSC
         /// <summary>
         /// StateWatcher for SceneChangeState
         /// </summary>
-        StateWatcher<SceneChangeState> m_sceneChangeStateWatcher = new StateWatcher<SceneChangeState>();
+        protected StateWatcher<SceneChangeState> m_sceneChangeStateWatcher = new StateWatcher<SceneChangeState>();
 
         /// <summary>
         /// StateWatcher for PauseState
         /// </summary>
-        StateWatcher<PauseState> m_pauseStateWatcher = new StateWatcher<PauseState>();
+        protected StateWatcher<PauseState> m_pauseStateWatcher = new StateWatcher<PauseState>();
 
         // ----------------------------------------------------------------------------------------------
 
@@ -60,7 +60,7 @@ namespace SSC
         /// <param name="scene">Scene</param>
         /// <param name="mode">LoadSceneMode</param>
         // ----------------------------------------------------------------------------------------------
-        protected void resetOnSceneLoaded(Scene scene, LoadSceneMode mode)
+        protected virtual void resetOnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
 
             if(mode != LoadSceneMode.Single)
