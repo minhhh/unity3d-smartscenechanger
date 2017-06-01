@@ -572,7 +572,7 @@ namespace SSC
 #if UNITY_IOS || UNITY_ANDROID
 
             EventSystem.current.SetSelectedGameObject(null);
-
+            return;
 #else
 
             if (identifiers.Count <= 0)
