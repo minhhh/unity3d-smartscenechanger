@@ -357,7 +357,7 @@ namespace SSC
         // ----------------------------------------------------------------------------------------
         public void back(bool updateHistory)
         {
-            this.showUi(this.m_previousShowingUi, updateHistory, false);
+            this.showUi(this.previousShowingUiCopy, updateHistory, false);
         }
 
         /// <summary>
