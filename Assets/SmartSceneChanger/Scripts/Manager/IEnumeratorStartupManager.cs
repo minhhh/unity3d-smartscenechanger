@@ -78,6 +78,16 @@ namespace SSC
         /// </summary>
         protected string m_error = "";
 
+        /// <summary>
+        /// Detected new startup object (before)
+        /// </summary>
+        protected bool m_detectedNewStartupObjectBefore = false;
+
+        /// <summary>
+        /// Detected new startup object (after)
+        /// </summary>
+        protected bool m_detectedNewStartupObjectAfter = false;
+
         // -------------------------------------------------------------------------------------------------------
 
         /// <summary>
@@ -108,10 +118,13 @@ namespace SSC
             if(ba == BeforeAfter.Before)
             {
                 this.m_iesListBefore.Add(new IeStruct(iess));
+                this.m_detectedNewStartupObjectBefore = true;
             }
+
             else
             {
                 this.m_iesListAfter.Add(new IeStruct(iess));
+                this.m_detectedNewStartupObjectAfter = true;
             }
 
         }
@@ -148,6 +161,26 @@ namespace SSC
 
             return ret;
 
+        }
+
+        /// <summary>
+        /// Check if detected new startup
+        /// </summary>
+        /// <returns>detected</returns>
+        // -------------------------------------------------------------------------------------------------------
+        public bool checkIfDetectedNewStartup(BeforeAfter ba)
+        {
+
+            if(ba == BeforeAfter.Before)
+            {
+                return this.m_detectedNewStartupObjectBefore;
+            }
+
+            else
+            {
+                return this.m_detectedNewStartupObjectAfter;
+            }
+            
         }
 
         /// <summary>
@@ -274,6 +307,21 @@ namespace SSC
             while (workingCoCounter > 0)
             {
                 yield return null;
+            }
+
+            // m_detectedNewStartupObject
+            {
+
+                if (ba == BeforeAfter.Before)
+                {
+                    this.m_detectedNewStartupObjectBefore = false;
+                }
+
+                else
+                {
+                    this.m_detectedNewStartupObjectAfter = false;
+                }
+
             }
 
         }

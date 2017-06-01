@@ -115,6 +115,11 @@ namespace SSC
         /// </summary>
         protected List<float> m_currentCoProgresses = new List<float>();
 
+        /// <summary>
+        /// Detected new startup object
+        /// </summary>
+        protected bool m_detectedNewStartupObject = false;
+
         // -------------------------------------------------------------------------------------------------------
 
         /// <summary>
@@ -150,6 +155,7 @@ namespace SSC
         public void addSceneStartupWww(string url, Action<WWW> success_func, Action<WWW> failed_func, Action<WWW> progress_func)
         {
             this.m_wwwsList.Add(new WwwStruct(url, success_func, failed_func, progress_func));
+            this.m_detectedNewStartupObject = true;
         }
 
         /// <summary>
@@ -187,6 +193,16 @@ namespace SSC
 
             return ret;
 
+        }
+
+        /// <summary>
+        /// Check if detected new startup
+        /// </summary>
+        /// <returns>detected</returns>
+        // -------------------------------------------------------------------------------------------------------
+        public bool checkIfDetectedNewStartup()
+        {
+            return this.m_detectedNewStartupObject;
         }
 
         /// <summary>
@@ -410,6 +426,11 @@ namespace SSC
             while (workingCoCounter > 0)
             {
                 yield return null;
+            }
+
+            // m_detectedNewStartupObject
+            {
+                this.m_detectedNewStartupObject = false;
             }
 
         }

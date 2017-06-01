@@ -190,6 +190,11 @@ namespace SSC
         /// </summary>
         protected IEnumerator m_runtimeLoading = null;
 
+        /// <summary>
+        /// Detected new startup object
+        /// </summary>
+        protected bool m_detectedNewStartupObject = false;
+
         // -------------------------------------------------------------------------------------------------------
 
         /// <summary>
@@ -282,6 +287,7 @@ namespace SSC
         public void addSceneStartupAssetBundle(string assetBundleName, string variant, Action<AssetBundle> success_func, Action<WWW> failed_func, Action<WWW> progress_func)
         {
             this.m_absList.Add(new AbStruct(assetBundleName, variant, success_func, failed_func, progress_func));
+            this.m_detectedNewStartupObject = true;
         }
 
         /// <summary>
@@ -327,6 +333,16 @@ namespace SSC
 
             return ret;
 
+        }
+
+        /// <summary>
+        /// Check if detected new startup
+        /// </summary>
+        /// <returns>detected</returns>
+        // -------------------------------------------------------------------------------------------------------
+        public bool checkIfDetectedNewStartup()
+        {
+            return this.m_detectedNewStartupObject;
         }
 
         /// <summary>
@@ -391,6 +407,11 @@ namespace SSC
             // runtime
             {
                 this.m_absListRuntime.Clear();
+            }
+
+            // m_detectedNewStartupObject
+            {
+                this.m_detectedNewStartupObject = false;
             }
 
         }
@@ -1063,6 +1084,11 @@ namespace SSC
                     reloadScene(ret);
                 });
 
+            }
+
+            // m_detectedNewStartupObject
+            {
+                this.m_detectedNewStartupObject = false;
             }
 
         }

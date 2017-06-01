@@ -481,6 +481,39 @@ namespace SSC
                     yield break;
                 }
 
+                //
+                {
+
+                    if(IEnumeratorStartupManager.Instance.checkIfDetectedNewStartup(IEnumeratorStartupManager.BeforeAfter.Before))
+                    {
+                        this.m_resumePoint = ResumePoint.IEBefore;
+                        Invoke("retry", 0.1f);
+                        yield break;
+                    }
+
+                    else if (AssetBundleStartupManager.Instance.checkIfDetectedNewStartup())
+                    {
+                        this.m_resumePoint = ResumePoint.AssetBundle;
+                        Invoke("retry", 0.1f);
+                        yield break;
+                    }
+
+                    else if (WwwStartupManager.Instance.checkIfDetectedNewStartup())
+                    {
+                        this.m_resumePoint = ResumePoint.Www;
+                        Invoke("retry", 0.1f);
+                        yield break;
+                    }
+
+                    else if (IEnumeratorStartupManager.Instance.checkIfDetectedNewStartup(IEnumeratorStartupManager.BeforeAfter.After))
+                    {
+                        this.m_resumePoint = ResumePoint.IEAfter;
+                        Invoke("retry", 0.1f);
+                        yield break;
+                    }
+
+                }
+
             }
 
             // SceneChangeStateWatcher
