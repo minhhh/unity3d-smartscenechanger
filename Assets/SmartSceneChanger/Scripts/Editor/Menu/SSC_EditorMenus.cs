@@ -26,4 +26,13 @@ public class SSC_EditorMenus
         EditorWindow.GetWindow(typeof(SSCSample.SampleBuildAssetBundlesWindow)).Show();
     }
 
+    /// <summary>
+    /// Show Set AssetBundle Name Window
+    /// </summary>
+    [MenuItem("Tools/SSC/Set AssetBundle Name Window", false, 0)]
+    static void ShowSetAssetBundleNameWindow()
+    {
+        EditorWindow.GetWindow(typeof(SSC.SetAssetBundleNameWindow)).Show();
+    }
+
 }
