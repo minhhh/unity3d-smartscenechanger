@@ -220,6 +220,8 @@ namespace SSC
 
             AssetImporter ai = null;
 
+            string temp = "";
+
             foreach (var val in this.m_targetPaths)
             {
 
@@ -232,8 +234,13 @@ namespace SSC
 
                 if(ai)
                 {
-                    ai.assetBundleName = val.filePath.Remove(0, 7).ToLower().Replace(' ', '_');
+
+                    temp = val.filePath.Remove(0, 7).ToLower().Replace(' ', '_');
+                    temp = Path.ChangeExtension(temp, ".unity3d");
+
+                    ai.assetBundleName = temp;
                     ai.assetBundleVariant = this.m_variant;
+
                 }
 
             }
