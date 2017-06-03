@@ -59,7 +59,7 @@ namespace SSC
 
                         }
 
-                        if (GUILayout.Button(Path.GetFileNameWithoutExtension("S"), GUILayout.Width(40.0f)))
+                        if (GUILayout.Button("S", GUILayout.Width(40.0f)))
                         {
                             Selection.activeObject = AssetDatabase.LoadAssetAtPath(scene.path, typeof(Object));
                         }
