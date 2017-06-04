@@ -919,8 +919,14 @@ namespace SSC
 
                     if (GUILayout.Button("Reset Settings", GUILayout.MinHeight(30)))
                     {
+
                         GUI.FocusControl("");
-                        this.resetSettings();
+
+                        if (EditorUtility.DisplayDialog("Reset Settings", "Reset ?", "Yes", "No"))
+                        {
+                            this.resetSettings();
+                        }
+                            
                     }
 
                     EditorGUILayout.EndHorizontal();
