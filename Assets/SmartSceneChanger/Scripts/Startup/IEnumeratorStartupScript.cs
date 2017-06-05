@@ -14,17 +14,17 @@ namespace SSC
         /// <summary>
         /// done flag
         /// </summary>
-        bool m_done = false;
+        protected bool m_done = false;
 
         /// <summary>
         /// error message
         /// </summary>
-        string m_error = "";
+        protected string m_error = "";
 
         /// <summary>
         /// progress
         /// </summary>
-        float m_progress = 0.0f;
+        protected float m_progress = 0.0f;
 
         /// <summary>
         /// Called in Start()
