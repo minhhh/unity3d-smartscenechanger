@@ -31,7 +31,17 @@ namespace SSC
             /// <summary>
             /// IEnumeratorStartupScript reference 
             /// </summary>
-            public IEnumeratorStartupScript iess = null;
+            public IEnumerator startup = null;
+
+            /// <summary>
+            /// Progress function
+            /// </summary>
+            public Func<float> progress = null;
+
+            /// <summary>
+            /// Progress function
+            /// </summary>
+            public Func<string> error = null;
 
             /// <summary>
             /// Done with success flag
@@ -42,9 +52,11 @@ namespace SSC
             /// Constructor
             /// </summary>
             /// <param name="_iess"></param>
-            public IeStruct(IEnumeratorStartupScript _iess)
+            public IeStruct(IEnumerator _startup, Func<float> _progress, Func<string> _error)
             {
-                this.iess = _iess;
+                this.startup = _startup;
+                this.progress = _progress;
+                this.error = _error;
             }
 
         }
@@ -112,21 +124,29 @@ namespace SSC
         /// <param name="iess">IEnumeratorStartupScript</param>
         /// <param name="ba">before or after</param>
         // -------------------------------------------------------------------------------------------------------
-        public void addSceneStartupIEnumerator(IEnumeratorStartupScript iess, BeforeAfter ba)
+        public void addSceneStartupIEnumerator(IEnumerator startup, Func<float> progress, Func<string> error, BeforeAfter ba)
         {
+
+            if(startup == null)
+            {
+                Debug.LogWarning("startup == null");
+                return;
+            }
+
+            // -------------------------------
 
             if(ba == BeforeAfter.Before)
             {
-                this.m_iesListBefore.Add(new IeStruct(iess));
+                this.m_iesListBefore.Add(new IeStruct(startup, progress, error));
                 this.m_detectedNewStartupObjectBefore = true;
             }
 
             else
             {
-                this.m_iesListAfter.Add(new IeStruct(iess));
+                this.m_iesListAfter.Add(new IeStruct(startup, progress, error));
                 this.m_detectedNewStartupObjectAfter = true;
             }
-
+           
         }
 
         /// <summary>
@@ -151,12 +171,32 @@ namespace SSC
 
             foreach(var ies in this.m_iesListBefore)
             {
-                ret += (ies.doneSuccess) ? 1.0f : ies.iess.progress();
+
+                if(ies.doneSuccess)
+                {
+                    ret += 1.0f;
+                }
+
+                else if(ies.progress != null)
+                {
+                    ret += ies.progress() * 0.999f;
+                }
+                
             }
 
             foreach (var ies in this.m_iesListAfter)
             {
-                ret += (ies.doneSuccess) ? 1.0f : ies.iess.progress();
+
+                if (ies.doneSuccess)
+                {
+                    ret += 1.0f;
+                }
+
+                else if (ies.progress != null)
+                {
+                    ret += ies.progress() * 0.999f;
+                }
+
             }
 
             return ret;
@@ -225,26 +265,33 @@ namespace SSC
         protected IEnumerator startIEnumeratorInternal(IeStruct ies, Action doneCallback)
         {
 
-            yield return ies.iess.startup();
+            yield return ies.startup;
 
-            if (string.IsNullOrEmpty(ies.iess.error()))
+            if(ies.error != null)
             {
-                ies.doneSuccess = true;
-            }
 
-            else
-            {
-                if (!this.m_ignoreError)
+                string errorStr = ies.error();
+
+                if (string.IsNullOrEmpty(errorStr))
                 {
-                    this.setError(ies.iess.error());
+                    ies.doneSuccess = true;
                 }
 
                 else
                 {
-                    ies.doneSuccess = true;
-                }
-            }
+                    if (!this.m_ignoreError)
+                    {
+                        this.setError(errorStr);
+                    }
 
+                    else
+                    {
+                        ies.doneSuccess = true;
+                    }
+                }
+
+            }
+            
             doneCallback();
 
         }

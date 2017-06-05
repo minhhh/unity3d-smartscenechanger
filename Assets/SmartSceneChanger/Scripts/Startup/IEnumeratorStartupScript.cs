@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -14,17 +15,18 @@ namespace SSC
         /// <summary>
         /// done flag
         /// </summary>
-        protected bool m_done = false;
+        [Obsolete("Not in use", true)]
+        private bool m_done = false;
 
         /// <summary>
         /// error message
         /// </summary>
-        protected string m_error = "";
+        private string m_error = "";
 
         /// <summary>
         /// progress
         /// </summary>
-        protected float m_progress = 0.0f;
+        private float m_progress = 0.0f;
 
         /// <summary>
         /// Called in Start()
@@ -52,7 +54,7 @@ namespace SSC
 
             this.initOnStart();
 
-            IEnumeratorStartupManager.Instance.addSceneStartupIEnumerator(this, this.m_beforeAfter);
+            IEnumeratorStartupManager.Instance.addSceneStartupIEnumerator(this.startup(), this.progress, this.error, this.m_beforeAfter);
 
         }
 
@@ -60,6 +62,7 @@ namespace SSC
         /// Call startup()
         /// </summary>
         /// <returns>IEnumerator</returns>
+        [Obsolete("Not in use", true)]
         public IEnumerator startupBase()
         {
 
@@ -79,6 +82,7 @@ namespace SSC
         /// Return done flag
         /// </summary>
         /// <returns>done flag</returns>
+        [Obsolete("Not in use", true)]
         public bool isDone()
         {
             return this.m_done;
