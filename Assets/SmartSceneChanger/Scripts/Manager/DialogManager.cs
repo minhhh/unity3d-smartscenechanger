@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 //using DialogInfos = System.Collections.Generic.Dictionary<string, System.Object>;
@@ -113,6 +114,11 @@ namespace SSC
         /// </summary>
         protected bool m_previousPauseState = false;
 
+        /// <summary>
+        /// Reference to Selectable before showing dialog
+        /// </summary>
+        protected Selectable m_refSelectableBeforeShowingDialog = null;
+
         // ----------------------------------------------------------------------------------------
 
         /// <summary>
@@ -194,6 +200,21 @@ namespace SSC
                 if (finishDoneCallback != null)
                 {
                     finishDoneCallback();
+                }
+
+            }
+
+            // resume selectable
+            {
+
+                if(this.m_refSelectableBeforeShowingDialog)
+                {
+                    EventSystem.current.SetSelectedGameObject(this.m_refSelectableBeforeShowingDialog.gameObject);
+                }
+
+                else
+                {
+                    EventSystem.current.SetSelectedGameObject(null);
                 }
 
             }
@@ -307,6 +328,21 @@ namespace SSC
                 this.m_yesButtonCallback = null;
                 this.m_noButtonCallback = null;
 
+                // m_refSelectableBeforeShowingDialog
+                {
+
+                    Selectable currentSelectable = null;
+                    GameObject selected = EventSystem.current.currentSelectedGameObject;
+
+                    if (selected)
+                    {
+                        currentSelectable = selected.GetComponent<Selectable>();
+                    }
+
+                    this.m_refSelectableBeforeShowingDialog = currentSelectable;
+
+                }
+
             }
 
             // addErrorStackIfError
@@ -384,6 +420,22 @@ namespace SSC
                 this.m_okButtonCallback = null;
                 this.m_yesButtonCallback = yesCallback;
                 this.m_noButtonCallback = noCallback;
+
+
+                // m_refSelectableBeforeShowingDialog
+                {
+
+                    Selectable currentSelectable = null;
+                    GameObject selected = EventSystem.current.currentSelectedGameObject;
+
+                    if(selected)
+                    {
+                        currentSelectable = selected.GetComponent<Selectable>();
+                    }
+
+                    this.m_refSelectableBeforeShowingDialog = currentSelectable;
+
+                }
 
             }
 
