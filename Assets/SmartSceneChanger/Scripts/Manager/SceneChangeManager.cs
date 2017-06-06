@@ -76,6 +76,16 @@ namespace SSC
         /// </summary>
         protected ResumePoint m_resumePoint = ResumePoint.None;
 
+        /// <summary>
+        /// Lock statements before loadings
+        /// </summary>
+        protected List<MonoBehaviour> m_lockBeforeLoadings = new List<MonoBehaviour>();
+
+        /// <summary>
+        /// Lock statements after loadings
+        /// </summary>
+        protected List<MonoBehaviour> m_lockAfterLoadings = new List<MonoBehaviour>();
+
         // -------------------------------------------------------------------------------------------------------
 
         /// <summary>
@@ -289,6 +299,14 @@ namespace SSC
         {
 
             yield return null;
+
+            // wait by lock
+            {
+                while(this.m_lockBeforeLoadings.Count > 0)
+                {
+                    yield return null;
+                }
+            }
 
             // unload
             if(resumePoint == ResumePoint.None)
@@ -516,6 +534,14 @@ namespace SSC
 
             }
 
+            // wait by lock
+            {
+                while (this.m_lockAfterLoadings.Count > 0)
+                {
+                    yield return null;
+                }
+            }
+
             // SceneChangeStateWatcher
             {
                 var scState = SimpleReduxManager.Instance.SceneChangeStateWatcher.state();
@@ -640,6 +666,83 @@ namespace SSC
             }
 
             return ret;
+
+        }
+
+        /// <summary>
+        /// Add lock obj to before
+        /// </summary>
+        /// <param name="mb">obj</param>
+        // -------------------------------------------------------------------------------------------------------
+        public void addLockToBefore(MonoBehaviour mb)
+        {
+
+            if(mb && !this.m_lockBeforeLoadings.Contains(mb))
+            {
+                this.m_lockBeforeLoadings.Add(mb);
+            }
+
+        }
+
+        /// <summary>
+        /// Add lock obj to after
+        /// </summary>
+        /// <param name="mb">obj</param>
+        // -------------------------------------------------------------------------------------------------------
+        public void addLockToAfter(MonoBehaviour mb)
+        {
+
+            if (mb && !this.m_lockAfterLoadings.Contains(mb))
+            {
+                this.m_lockAfterLoadings.Add(mb);
+            }
+
+        }
+
+        /// <summary>
+        /// Remove lock obj from before
+        /// </summary>
+        /// <param name="mb">obj</param>
+        // -------------------------------------------------------------------------------------------------------
+        public void removeLockFromBefore(MonoBehaviour mb)
+        {
+
+#if UNITY_EDITOR
+
+            if(!this.m_lockBeforeLoadings.Remove(mb))
+            {
+                Debug.LogWarning("(#if UNITY_EDITOR) Failed removeLockFromBefore");
+            }
+
+#else
+
+            this.m_lockBeforeLoadings.Remove(mb);
+
+#endif
+
+
+        }
+
+        /// <summary>
+        /// Remove lock obj from after
+        /// </summary>
+        /// <param name="mb">obj</param>
+        // -------------------------------------------------------------------------------------------------------
+        public void removeLockFromAfter(MonoBehaviour mb)
+        {
+
+#if UNITY_EDITOR
+
+            if (!this.m_lockAfterLoadings.Remove(mb))
+            {
+                Debug.LogWarning("(#if UNITY_EDITOR) Failed removeLockFromAfter");
+            }
+
+#else
+
+            this.m_lockAfterLoadings.Remove(mb);
+
+#endif
 
         }
 
