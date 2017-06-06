@@ -291,6 +291,11 @@ namespace SSC
                 }
 
             }
+
+            else
+            {
+                ies.doneSuccess = true;
+            }
             
             doneCallback();
 
