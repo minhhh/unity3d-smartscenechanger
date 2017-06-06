@@ -150,10 +150,11 @@ namespace SSC
                     if(this.m_targetPaths.Count > 0)
                     {
 
-                        if(EditorUtility.DisplayDialog("Confirmation", "You cannot undo this action.\n\nContinue ?", "OK", "Cancel"))
+                        if(EditorUtility.DisplayDialog("Confirmation", "You cannot undo this action.\n\nContinue ?", "Yes", "Cancel"))
                         {
                             this.startSettingAssetBundleNames();
                             EditorUtility.DisplayDialog("Confirmation", "Done.", "OK");
+                            AssetDatabase.Refresh();
                         }
                         
                     }
@@ -235,7 +236,7 @@ namespace SSC
                 if(ai)
                 {
 
-                    temp = val.filePath.Remove(0, 7).ToLower().Replace(' ', '_');
+                    temp = val.filePath.ToLower().Replace(' ', '_');
                     temp = Path.ChangeExtension(temp, ".unity3d");
 
                     ai.assetBundleName = temp;

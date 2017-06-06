@@ -20,7 +20,12 @@ namespace SSC
         public static void SetAssetBundleNames()
         {
 
-            if (!EditorUtility.DisplayDialog("Set AssetBundle Name to File Path", "Continue ?", "Yes", "Cancel"))
+            if (!EditorUtility.DisplayDialog(
+                "Set AssetBundle Name to File Path",
+                "You cannot undo this action.\n\nContinue ?",
+                "Yes",
+                "Cancel"
+                ))
             {
                 return;
             }
@@ -41,7 +46,7 @@ namespace SSC
                 if(ai)
                 {
 
-                    path = path.Remove(0, 7).ToLower().Replace(' ', '_');
+                    path = path.ToLower().Replace(' ', '_');
                     path = Path.ChangeExtension(path, ".unity3d");
 
                     ai.assetBundleName = path;
@@ -50,6 +55,8 @@ namespace SSC
             }
 
             EditorUtility.DisplayDialog("Set AssetBundle Name to File Path", "Done.", "OK");
+
+            AssetDatabase.Refresh();
 
         }
 
