@@ -121,7 +121,7 @@ namespace SSC
         /// <param name="hideDoneCallback">callback when hiding done</param>
         /// <returns>start or not</returns>
         // ------------------------------------------------------------------------------------------
-        public virtual bool startHiding(Action hideDoneCallback)
+        public virtual bool startHiding(Action hideDoneCallback = null)
         {
 
             if (this.m_shState == ShowHideState.NowHiding || this.m_shState == ShowHideState.NowHidingTransition)
