@@ -37,6 +37,11 @@ namespace SSC
             public Action<AssetBundle, System.Object> successDetailFunc = null;
 
             /// <summary>
+            /// Success detail function for asunc
+            /// </summary>
+            public Action<AssetBundle, System.Object, Action> successDetailFuncForAsync = null;
+
+            /// <summary>
             /// Failed function
             /// </summary>
             public Action<WWW> failedFunc = null;
@@ -107,6 +112,32 @@ namespace SSC
 
             }
 
+            /// <summary>
+            /// Constructor
+            /// </summary>
+            /// <param name="_name">name</param>
+            /// <param name="_variant">variant</param>
+            /// <param name="_successDetailFuncForAsync">successDetailFuncForAsync</param>
+            /// <param name="_failedFunc">failedFunc</param>
+            /// <param name="_progressFunc">progressFunc</param>
+            /// <param name="_identifierForDetail">identifierForDetail</param>
+            public AbStruct(
+                string _name,
+                string _variant,
+                Action<AssetBundle, System.Object, Action> _successDetailFuncForAsync,
+                Action<WWW> _failedFunc,
+                Action<WWW> _progressFunc,
+                System.Object _identifierForDetail
+                )
+            {
+
+                this.nameDotVariant = string.IsNullOrEmpty(_variant) ? _name : _name + "." + _variant;
+                this.successDetailFuncForAsync = _successDetailFuncForAsync;
+                this.failedFunc = _failedFunc;
+                this.progressFunc = _progressFunc;
+                this.identifierForDetail = _identifierForDetail;
+
+            }
 
         }
 
@@ -341,6 +372,28 @@ namespace SSC
             string assetBundleName,
             string variant,
             Action<AssetBundle, System.Object> success_func,
+            Action<WWW> failed_func,
+            Action<WWW> progress_func,
+            System.Object identifierForDetail
+            )
+        {
+            this.m_absList.Add(new AbStruct(assetBundleName, variant, success_func, failed_func, progress_func, identifierForDetail));
+            this.m_detectedNewStartupObject = true;
+        }
+
+        /// <summary>
+        /// Add startup data
+        /// </summary>
+        /// <param name="assetBundleName">assetBundleName</param>
+        /// <param name="variant">variant</param>
+        /// <param name="success_func">success function</param>
+        /// <param name="failed_func">failed function</param>
+        /// <param name="progress_func">progress function</param>
+        // -------------------------------------------------------------------------------------------------------
+        public void addSceneStartupAssetBundle(
+            string assetBundleName,
+            string variant,
+            Action<AssetBundle, System.Object, Action> success_func,
             Action<WWW> failed_func,
             Action<WWW> progress_func,
             System.Object identifierForDetail
@@ -656,6 +709,23 @@ namespace SSC
                                 abs.successDetailFunc(from_dependencies, abs.identifierForDetail);
                             }
 
+                            else if (abs.successDetailFuncForAsync != null)
+                            {
+
+                                bool finished = false; 
+
+                                abs.successDetailFuncForAsync(from_dependencies, abs.identifierForDetail, () =>
+                                {
+                                    finished = true;
+                                });
+
+                                while(!finished)
+                                {
+                                    yield return null;
+                                }
+
+                            }
+
                         }
 
                         this.m_currentCoProgresses[coNumber] = 0.0f;
@@ -788,6 +858,23 @@ namespace SSC
                                     else if (abs.successDetailFunc != null)
                                     {
                                         abs.successDetailFunc(decrypted, abs.identifierForDetail);
+                                    }
+
+                                    else if (abs.successDetailFuncForAsync != null)
+                                    {
+
+                                        bool finished = false;
+
+                                        abs.successDetailFuncForAsync(decrypted, abs.identifierForDetail, () =>
+                                        {
+                                            finished = true;
+                                        });
+
+                                        while (!finished)
+                                        {
+                                            yield return null;
+                                        }
+
                                     }
 
                                 }
@@ -1646,14 +1733,36 @@ namespace SSC
 
                             }
 
-                            if (abs.successFunc != null)
+                            // successFunc
                             {
-                                abs.successFunc(decrypted);
-                            }
 
-                            else if(abs.successDetailFunc != null)
-                            {
-                                abs.successDetailFunc(decrypted, abs.identifierForDetail);
+                                if (abs.successFunc != null)
+                                {
+                                    abs.successFunc(decrypted);
+                                }
+
+                                else if (abs.successDetailFunc != null)
+                                {
+                                    abs.successDetailFunc(decrypted, abs.identifierForDetail);
+                                }
+
+                                else if (abs.successDetailFuncForAsync != null)
+                                {
+
+                                    bool finished = false;
+
+                                    abs.successDetailFuncForAsync(decrypted, abs.identifierForDetail, () =>
+                                    {
+                                        finished = true;
+                                    });
+
+                                    while (!finished)
+                                    {
+                                        yield return null;
+                                    }
+
+                                }
+
                             }
 
                             abs.doneSuccess = true;
@@ -1770,6 +1879,35 @@ namespace SSC
         {
 
             this.m_absListRuntime.Add(new AbStruct(name, variant, successDetailFunc, failedFunc, progressFunc, identifierForDetail));
+
+            if (this.m_runtimeLoading == null && !this.hasError())
+            {
+                this.m_runtimeLoading = this.loadAssetBundleInRuntimeIE();
+                StartCoroutine(this.m_runtimeLoading);
+            }
+
+        }
+
+        /// <summary>
+        /// Add AbStruct ro list
+        /// </summary>
+        /// <param name="name">name</param>
+        /// <param name="variant">variant</param>
+        /// <param name="successDetailFuncForAsync">successDetailFuncForAsync</param>
+        /// <param name="failedFunc">failedFunc</param>
+        /// <param name="progressFunc">progressFunc</param>
+        // -------------------------------------------------------------------------------------------------------
+        public void loadAssetBundleInRuntime(
+            string name,
+            string variant,
+            Action<AssetBundle, System.Object, Action> successDetailFuncForAsync,
+            Action<WWW> failedFunc,
+            Action<WWW> progressFunc,
+            System.Object identifierForDetail
+            )
+        {
+
+            this.m_absListRuntime.Add(new AbStruct(name, variant, successDetailFuncForAsync, failedFunc, progressFunc, identifierForDetail));
 
             if (this.m_runtimeLoading == null && !this.hasError())
             {
