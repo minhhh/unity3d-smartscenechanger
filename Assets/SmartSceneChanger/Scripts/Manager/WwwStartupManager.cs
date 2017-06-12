@@ -383,6 +383,11 @@ namespace SSC
 
             yield return null;
 
+            // m_detectedNewStartupObject
+            {
+                this.m_detectedNewStartupObject = false;
+            }
+
             // clear error
             {
                 this.setError("", "");
@@ -426,11 +431,6 @@ namespace SSC
             while (workingCoCounter > 0)
             {
                 yield return null;
-            }
-
-            // m_detectedNewStartupObject
-            {
-                this.m_detectedNewStartupObject = false;
             }
 
         }

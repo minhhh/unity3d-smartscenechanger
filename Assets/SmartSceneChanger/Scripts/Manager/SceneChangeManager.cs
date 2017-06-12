@@ -86,6 +86,11 @@ namespace SSC
         /// </summary>
         protected List<MonoBehaviour> m_lockAfterLoadings = new List<MonoBehaviour>();
 
+        /// <summary>
+        /// Loop counter for startups
+        /// </summary>
+        protected int m_loopCounterForABStartup = 0;
+
         // -------------------------------------------------------------------------------------------------------
 
         /// <summary>
@@ -236,6 +241,8 @@ namespace SSC
             WwwStartupManager.Instance.clearContents();
             AssetBundleStartupManager.Instance.clearContents();
 
+            this.m_loopCounterForABStartup = 0;
+
         }
 
         /// <summary>
@@ -360,7 +367,6 @@ namespace SSC
             // main
             {
 
-                int loopCounter = 0;
                 bool sceneAdditiveDetected = false;
                 bool needToReload = false;
 
@@ -393,7 +399,7 @@ namespace SSC
                         List<AssetBundle> additiveScenes = new List<AssetBundle>();
 
                         yield return AssetBundleStartupManager.Instance.startAbStartup(
-                            loopCounter++ > 0,
+                            this.m_loopCounterForABStartup++ > 0,
                             (detectedAdditiveScenes) =>
                             {
                                 additiveScenes.AddRange(detectedAdditiveScenes);

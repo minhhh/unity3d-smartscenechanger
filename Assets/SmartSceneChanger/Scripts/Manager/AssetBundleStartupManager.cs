@@ -1176,6 +1176,11 @@ namespace SSC
 
             yield return null;
 
+            // m_detectedNewStartupObject
+            {
+                this.m_detectedNewStartupObject = false;
+            }
+
             // clear error
             {
                 this.setError("", "");
@@ -1258,11 +1263,6 @@ namespace SSC
                     reloadScene(ret);
                 });
 
-            }
-
-            // m_detectedNewStartupObject
-            {
-                this.m_detectedNewStartupObject = false;
             }
 
         }

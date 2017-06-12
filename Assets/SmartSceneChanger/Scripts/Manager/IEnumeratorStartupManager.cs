@@ -312,6 +312,22 @@ namespace SSC
 
             yield return null;
 
+
+            // m_detectedNewStartupObject
+            {
+
+                if (ba == BeforeAfter.Before)
+                {
+                    this.m_detectedNewStartupObjectBefore = false;
+                }
+
+                else
+                {
+                    this.m_detectedNewStartupObjectAfter = false;
+                }
+
+            }
+
             // clear error
             {
                 this.setError("");
@@ -359,21 +375,6 @@ namespace SSC
             while (workingCoCounter > 0)
             {
                 yield return null;
-            }
-
-            // m_detectedNewStartupObject
-            {
-
-                if (ba == BeforeAfter.Before)
-                {
-                    this.m_detectedNewStartupObjectBefore = false;
-                }
-
-                else
-                {
-                    this.m_detectedNewStartupObjectAfter = false;
-                }
-
             }
 
         }
