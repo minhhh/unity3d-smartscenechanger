@@ -1188,6 +1188,7 @@ namespace SSC
 
             if (this.m_absList.Count <= 0)
             {
+                this.setManifestFileAndFolderUrl();
                 yield break;
             }
 
