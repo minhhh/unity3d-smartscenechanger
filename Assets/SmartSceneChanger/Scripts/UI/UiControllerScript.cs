@@ -89,7 +89,14 @@ namespace SSC
             {
                 if(this.m_shState == ShowHideState.NowShowing || this.m_shState == ShowHideState.NowShowingTransition)
                 {
+
+                    if(showDoneCallback != null)
+                    {
+                        showDoneCallback();
+                    }
+
                     return false;
+
                 }
             }
 
@@ -126,15 +133,20 @@ namespace SSC
 
             if (this.m_shState == ShowHideState.NowHiding || this.m_shState == ShowHideState.NowHidingTransition)
             {
+
+                if(hideDoneCallback != null)
+                {
+                    hideDoneCallback();
+                }
+
                 return false;
+
             }
 
             // StartCoroutine
             {
-
                 StopAllCoroutines();
                 StartCoroutine(this.hideBase(hideDoneCallback));
-
             }
 
             return true;
