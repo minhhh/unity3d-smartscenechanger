@@ -49,6 +49,12 @@ namespace SSC
     public abstract class UiManager : MonoBehaviour
     {
 
+        public enum UiManagerType
+        {
+            Common,
+            Scene,
+        }
+
         /// <summary>
         /// Current showing ui id
         /// </summary>
