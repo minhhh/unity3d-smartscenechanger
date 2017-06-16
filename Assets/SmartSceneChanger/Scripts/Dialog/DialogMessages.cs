@@ -47,6 +47,11 @@ namespace SSC
         /// </summary>
         public string subMessage = "";
 
+        /// <summary>
+        /// For any purpose
+        /// </summary>
+        public string anyMessage = "";
+
     }
 
 }

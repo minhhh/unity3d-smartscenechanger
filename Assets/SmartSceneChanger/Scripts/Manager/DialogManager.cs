@@ -254,7 +254,11 @@ namespace SSC
             }
 
 #if UNITY_EDITOR
-            Debug.LogError("(#if UNITY_EDITOR) " + dialogMessages.urlIfNeeded + " | " + dialogMessages.mainMessage);
+            Debug.LogError("(#if UNITY_EDITOR) " +
+                dialogMessages.urlIfNeeded + " | " +
+                dialogMessages.mainMessage + " | " +
+                dialogMessages.subMessage + " | " +
+                dialogMessages.anyMessage);
 #endif
 
             if (this.m_numberOfErrorStack <= 0)
