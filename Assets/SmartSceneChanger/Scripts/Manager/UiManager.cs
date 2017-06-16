@@ -89,6 +89,11 @@ namespace SSC
         // ----------------------------------------------------------------------------------------
 
         /// <summary>
+        /// UI Dictionary Reference
+        /// </summary>
+        public Dictionary<string, UiListAndDefaultSelectable> uiDictionary { get { return this.m_uiDictionary; } }
+
+        /// <summary>
         /// m_currentShowingUi AsReadOnly
         /// </summary>
         public IList<string> currentShowingUiAsReadOnly { get { return this.m_currentShowingUi.AsReadOnly(); } }
