@@ -126,6 +126,11 @@ namespace SSC
         /// </summary>
         protected Selectable m_refSelectableBeforeShowingDialog = null;
 
+        /// <summary>
+        /// Consecutive showing dialogs flag
+        /// </summary>
+        protected bool m_consecutiveShowing = false;
+
         // ----------------------------------------------------------------------------------------
 
         /// <summary>
@@ -137,6 +142,11 @@ namespace SSC
         /// Error stack
         /// </summary>
         public List<System.Object> errorDialogMessagesStack { get { return this.m_errorDialogMessagesStack; } }
+
+        /// <summary>
+        /// Consecutive showing dialogs flag
+        /// </summary>
+        public bool consecutiveShowing { get { return this.m_consecutiveShowing; } set { this.m_consecutiveShowing = value; } }
 
         // ----------------------------------------------------------------------------------------
 
@@ -340,7 +350,7 @@ namespace SSC
         public virtual bool showOkDialog(System.Object messages, Action okCallback, OkDialogSelectable selectable = OkDialogSelectable.Ok)
         {
 
-            if (this.m_nowShowing)
+            if (this.m_nowShowing && !this.m_consecutiveShowing)
             {
                 return false;
             }
@@ -354,20 +364,7 @@ namespace SSC
                 this.m_yesButtonCallback = null;
                 this.m_noButtonCallback = null;
 
-                // m_refSelectableBeforeShowingDialog
-                {
-
-                    Selectable currentSelectable = null;
-                    GameObject selected = EventSystem.current.currentSelectedGameObject;
-
-                    if (selected)
-                    {
-                        currentSelectable = selected.GetComponent<Selectable>();
-                    }
-
-                    this.m_refSelectableBeforeShowingDialog = currentSelectable;
-
-                }
+                this.updateRefSelectableBeforeShowingDialog();
 
             }
 
@@ -432,7 +429,7 @@ namespace SSC
             )
         {
 
-            if (this.m_nowShowing)
+            if (this.m_nowShowing && !this.m_consecutiveShowing)
             {
                 return false;
             }
@@ -446,21 +443,7 @@ namespace SSC
                 this.m_yesButtonCallback = yesCallback;
                 this.m_noButtonCallback = noCallback;
 
-
-                // m_refSelectableBeforeShowingDialog
-                {
-
-                    Selectable currentSelectable = null;
-                    GameObject selected = EventSystem.current.currentSelectedGameObject;
-
-                    if(selected)
-                    {
-                        currentSelectable = selected.GetComponent<Selectable>();
-                    }
-
-                    this.m_refSelectableBeforeShowingDialog = currentSelectable;
-
-                }
+                this.updateRefSelectableBeforeShowingDialog();
 
             }
 
@@ -524,7 +507,7 @@ namespace SSC
         public virtual bool showProgressDialog(System.Object messages, Action showDoneCallback)
         {
 
-            if (this.m_nowShowing)
+            if (this.m_nowShowing && !this.m_consecutiveShowing)
             {
                 return false;
             }
@@ -534,20 +517,7 @@ namespace SSC
 
                 this.m_nowShowing = true;
 
-                // m_refSelectableBeforeShowingDialog
-                {
-
-                    Selectable currentSelectable = null;
-                    GameObject selected = EventSystem.current.currentSelectedGameObject;
-
-                    if (selected)
-                    {
-                        currentSelectable = selected.GetComponent<Selectable>();
-                    }
-
-                    this.m_refSelectableBeforeShowingDialog = currentSelectable;
-
-                }
+                this.updateRefSelectableBeforeShowingDialog();
 
             }
 
@@ -593,13 +563,24 @@ namespace SSC
                 this.m_refOkDialog.startHiding(() =>
                 {
 
-                    this.finishDialog(() =>
+                    if(this.m_consecutiveShowing)
                     {
                         if (this.m_okButtonCallback != null)
                         {
                             this.m_okButtonCallback();
                         }
-                    });
+                    }
+
+                    else
+                    {
+                        this.finishDialog(() =>
+                        {
+                            if (this.m_okButtonCallback != null)
+                            {
+                                this.m_okButtonCallback();
+                            }
+                        });
+                    }
 
                 });
 
@@ -620,13 +601,24 @@ namespace SSC
                 this.m_refYesNoDialog.startHiding(() =>
                 {
 
-                    this.finishDialog(() =>
+                    if (this.m_consecutiveShowing)
                     {
                         if (this.m_yesButtonCallback != null)
                         {
                             this.m_yesButtonCallback();
                         }
-                    });
+                    }
+
+                    else
+                    {
+                        this.finishDialog(() =>
+                        {
+                            if (this.m_yesButtonCallback != null)
+                            {
+                                this.m_yesButtonCallback();
+                            }
+                        });
+                    }
 
                 });
 
@@ -647,13 +639,24 @@ namespace SSC
                 this.m_refYesNoDialog.startHiding(() =>
                 {
 
-                    this.finishDialog(() =>
+                    if (this.m_consecutiveShowing)
                     {
                         if (this.m_noButtonCallback != null)
                         {
                             this.m_noButtonCallback();
                         }
-                    });
+                    }
+
+                    else
+                    {
+                        this.finishDialog(() =>
+                        {
+                            if (this.m_noButtonCallback != null)
+                            {
+                                this.m_noButtonCallback();
+                            }
+                        });
+                    }
 
                 });
 
@@ -690,9 +693,57 @@ namespace SSC
 
                 this.m_refProgressDialog.startHiding(() =>
                 {
-                    this.finishDialog(hideDoneCallback);
+
+                    if (this.m_consecutiveShowing)
+                    {
+
+                        if(hideDoneCallback != null)
+                        {
+                            hideDoneCallback();
+                        }
+
+                    }
+
+                    else
+                    {
+                        this.finishDialog(hideDoneCallback);
+                    }
+                        
                 });
 
+            }
+
+        }
+
+        /// <summary>
+        /// Update m_refSelectableBeforeShowingDialog
+        /// </summary>
+        // ----------------------------------------------------------------------------------------
+        protected void updateRefSelectableBeforeShowingDialog()
+        {
+
+            Selectable currentSelectable = null;
+            GameObject selected = EventSystem.current.currentSelectedGameObject;
+
+            if (selected)
+            {
+
+                currentSelectable = selected.GetComponent<Selectable>();
+
+                if (currentSelectable &&
+                currentSelectable != this.m_refOkButtonSelectable &&
+                currentSelectable != this.m_refYesButtonSelectable &&
+                currentSelectable != this.m_refNoButtonSelectable
+                )
+                {
+                    this.m_refSelectableBeforeShowingDialog = currentSelectable;
+                }
+
+            }
+
+            else
+            {
+                this.m_refSelectableBeforeShowingDialog = null;
             }
 
         }
