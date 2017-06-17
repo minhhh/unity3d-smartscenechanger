@@ -57,6 +57,13 @@ namespace SSC
         protected DialogUiControllerScript m_refYesNoDialog;
 
         /// <summary>
+        /// Reference to progress dialog UiControllerScript
+        /// </summary>
+        [SerializeField]
+        [Tooltip("Reference to progress dialog UiControllerScript")]
+        protected ProgressDialogUiControllerScript m_refProgressDialog;
+
+        /// <summary>
         /// Reference to OK button
         /// </summary>
         [SerializeField]
@@ -401,7 +408,6 @@ namespace SSC
         /// <param name="yesCallback">yes button callback</param>
         /// <param name="noCallback">no button callback</param>
         /// <returns>suuccess</returns>
-        /// <summary>
         // ----------------------------------------------------------------------------------------
         public virtual bool showYesNoDialog(
             System.Object messages,
@@ -494,6 +500,72 @@ namespace SSC
         }
 
         /// <summary>
+        /// Show progress dialog
+        /// </summary>
+        /// <param name="messages">DialogMessages</param>
+        /// <param name="showDoneCallback">callback when showing is done</param>
+        /// <returns>suuccess</returns>
+        // ----------------------------------------------------------------------------------------
+        public virtual bool showProgressDialog(System.Object messages, Action showDoneCallback)
+        {
+
+            if (this.m_nowShowing)
+            {
+                return false;
+            }
+
+            // set
+            {
+
+                this.m_nowShowing = true;
+
+                // m_refSelectableBeforeShowingDialog
+                {
+
+                    Selectable currentSelectable = null;
+                    GameObject selected = EventSystem.current.currentSelectedGameObject;
+
+                    if (selected)
+                    {
+                        currentSelectable = selected.GetComponent<Selectable>();
+                    }
+
+                    this.m_refSelectableBeforeShowingDialog = currentSelectable;
+
+                }
+
+            }
+
+            // sendPauseSignalIfNeeded
+            {
+                this.sendPauseSignalIfNeeded();
+            }
+
+            // show
+            {
+
+                if (this.m_refInputBlocker)
+                {
+                    this.m_refInputBlocker.startShowing();
+                }
+
+                if (this.m_refProgressDialog)
+                {
+
+                    this.m_refProgressDialog.setMessages(messages);
+                    this.m_refProgressDialog.setProgress(0.0f);
+
+                    this.m_refProgressDialog.startShowing(showDoneCallback);
+
+                }
+
+            }
+
+            return true;
+
+        }
+
+        /// <summary>
         /// Ok button function
         /// </summary>
         // ----------------------------------------------------------------------------------------
@@ -568,6 +640,42 @@ namespace SSC
                         }
                     });
 
+                });
+
+            }
+
+        }
+
+        /// <summary>
+        /// Set progress value
+        /// </summary>
+        /// <param name="val">progress value</param>
+        // ------------------------------------------------------------------------------------------
+        public void setProgress(float val)
+        {
+
+            if (this.m_refProgressDialog)
+            {
+                this.m_refProgressDialog.setProgress(val);
+            }
+
+        }
+
+        /// <summary>
+        /// Finish progress dialog
+        /// </summary>
+        // ----------------------------------------------------------------------------------------
+        public void finishProgressDialog(Action hideDoneCallback = null)
+        {
+
+            if (this.m_refProgressDialog)
+            {
+
+                this.m_refProgressDialog.setProgress(1.0f);
+
+                this.m_refProgressDialog.startHiding(() =>
+                {
+                    this.finishDialog(hideDoneCallback);
                 });
 
             }
