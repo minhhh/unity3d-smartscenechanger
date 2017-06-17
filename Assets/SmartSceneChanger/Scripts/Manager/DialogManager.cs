@@ -190,6 +190,21 @@ namespace SSC
                     this.m_nowShowing = false;
                     this.resumePauseSignalIfNeeded();
 
+                    // resume selectable
+                    {
+
+                        if (this.m_refSelectableBeforeShowingDialog)
+                        {
+                            EventSystem.current.SetSelectedGameObject(this.m_refSelectableBeforeShowingDialog.gameObject);
+                        }
+
+                        else
+                        {
+                            EventSystem.current.SetSelectedGameObject(null);
+                        }
+
+                    }
+
                     if (finishDoneCallback != null)
                     {
                         finishDoneCallback();
@@ -204,24 +219,24 @@ namespace SSC
                 this.m_nowShowing = false;
                 this.resumePauseSignalIfNeeded();
 
+                // resume selectable
+                {
+
+                    if (this.m_refSelectableBeforeShowingDialog)
+                    {
+                        EventSystem.current.SetSelectedGameObject(this.m_refSelectableBeforeShowingDialog.gameObject);
+                    }
+
+                    else
+                    {
+                        EventSystem.current.SetSelectedGameObject(null);
+                    }
+
+                }
+
                 if (finishDoneCallback != null)
                 {
                     finishDoneCallback();
-                }
-
-            }
-
-            // resume selectable
-            {
-
-                if(this.m_refSelectableBeforeShowingDialog)
-                {
-                    EventSystem.current.SetSelectedGameObject(this.m_refSelectableBeforeShowingDialog.gameObject);
-                }
-
-                else
-                {
-                    EventSystem.current.SetSelectedGameObject(null);
                 }
 
             }
