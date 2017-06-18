@@ -17,6 +17,7 @@ namespace SSC
             ScenePlaying,
             NowLoadingIntro,
             NowLoadingMain,
+            AllStartupsDone,
             NowLoadingOutro,
 
             [Obsolete("Obsoleted value", true)]

@@ -540,6 +540,14 @@ namespace SSC
 
             }
 
+            // SceneChangeStateWatcher
+            {
+                yield return null;
+                var scState = SimpleReduxManager.Instance.SceneChangeStateWatcher.state();
+                scState.setState(SimpleReduxManager.Instance.SceneChangeStateWatcher, SceneChangeState.StateEnum.AllStartupsDone);
+                yield return null;
+            }
+
             // wait by lock
             {
                 while (this.m_lockAfterLoadings.Count > 0)
