@@ -1,0 +1,23 @@
+﻿using System.Collections;
+using System.Collections.Generic;
+using UnityEngine;
+
+namespace #NAMESPACE#
+{
+
+    public class #CLASSNAME# : SSC.SceneChangeManager
+    {
+
+        /// <summary>
+        /// Back to title messages
+        /// </summary>
+        /// <returns>message</returns>
+        // -------------------------------------------------------------------------------------------------------
+        public override System.Object backToTitleMessages()
+        {
+            return base.backToTitleMessages();
+        }
+
+    }
+
+}

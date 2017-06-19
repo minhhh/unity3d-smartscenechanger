@@ -44,4 +44,13 @@ public class SSC_EditorMenus
         EditorWindow.GetWindow(typeof(SSC.ShowAllAssetBundleNamesWindow)).Show();
     }
 
+    /// <summary>
+    /// Show Set AssetBundle Name Window
+    /// </summary>
+    [MenuItem("Tools/SSC/Create Starter Window", false, 0)]
+    static void ShowCreateStarterWindow()
+    {
+        EditorWindow.GetWindow(typeof(SSC.CreateStarterWindow)).Show();
+    }
+
 }
