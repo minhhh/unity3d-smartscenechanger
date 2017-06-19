@@ -330,11 +330,15 @@ namespace SSC
 
             }
 
-
             // SceneChangeStateWatcher
             {
-                var scState = SimpleReduxManager.Instance.SceneChangeStateWatcher.state();
-                scState.setState(SimpleReduxManager.Instance.SceneChangeStateWatcher, SceneChangeState.StateEnum.NowLoadingMain);
+
+                if (resumePoint == ResumePoint.None)
+                {
+                    var scState = SimpleReduxManager.Instance.SceneChangeStateWatcher.state();
+                    scState.setState(SimpleReduxManager.Instance.SceneChangeStateWatcher, SceneChangeState.StateEnum.NowLoadingMain);
+                }
+                    
             }
 
             // load
