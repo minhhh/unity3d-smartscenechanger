@@ -53,6 +53,16 @@ namespace SSC
         //------------------------------------
 
         /// <summary>
+        /// Is available
+        /// </summary>
+        /// <returns>available</returns>
+        //-----------------------------------------------------------------------
+        public static bool isAvailable()
+        {
+            return instance;
+        }
+
+        /// <summary>
         /// Awake()
         /// </summary>
         //-----------------------------------------------------------------------
