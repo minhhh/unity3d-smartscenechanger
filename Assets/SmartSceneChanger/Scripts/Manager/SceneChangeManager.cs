@@ -642,16 +642,19 @@ namespace SSC
 
             // show ui
             {
-                
+
                 if (SceneUiManager.isAvailable())
                 {
-                    CommonUiManager.Instance.showUi(this.m_commonUiIdentifiersAfterLoadingScene, true, false, 0, null, null);
-                    SceneUiManager.Instance.showUi(this.m_sceneUiIdentifiersAfterLoadingScene, true, false, 0, null, this.sendNowLoadingDoneSignal);
+                    if (this.m_sceneUiIdentifiersAfterLoadingScene.Count > 0)
+                    {
+                        SceneUiManager.Instance.showUi(this.m_sceneUiIdentifiersAfterLoadingScene, true, false, 0, null, null);
+                    }
+                    CommonUiManager.Instance.showUi(this.m_commonUiIdentifiersAfterLoadingScene, true, false, 0, this.sendNowLoadingDoneSignal, null);
                 }
 
                 else
                 {
-                    CommonUiManager.Instance.showUi(this.m_commonUiIdentifiersAfterLoadingScene, true, false, 0, null, this.sendNowLoadingDoneSignal);
+                    CommonUiManager.Instance.showUi(this.m_commonUiIdentifiersAfterLoadingScene, true, false, 0, this.sendNowLoadingDoneSignal, null);
                 }
 
             }

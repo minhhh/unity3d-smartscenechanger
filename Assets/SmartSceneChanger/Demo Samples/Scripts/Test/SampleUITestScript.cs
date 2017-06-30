@@ -87,7 +87,7 @@ namespace SSCSample
 
         public void onClickReloadButton()
         {
-            SSC.SceneChangeManager.Instance.loadNextScene(SSC.SceneChangeManager.Instance.nowLoadingSceneName);
+            SSC.SceneChangeManager.Instance.loadNextScene(SSC.SceneChangeManager.Instance.nowLoadingSceneName, true, "", "All");
         }
 
     }
