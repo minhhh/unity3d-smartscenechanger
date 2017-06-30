@@ -87,11 +87,6 @@ namespace SSC
         /// </summary>
         protected bool m_nowInHidingTransition = false;
 
-        ///// <summary>
-        ///// Current pause state
-        ///// </summary>
-        //protected bool m_currentPauseState = false;
-
         // ----------------------------------------------------------------------------------------
 
         /// <summary>
@@ -495,7 +490,7 @@ namespace SSC
 
             temp = temp || CommonUiManager.Instance.shouldSendPauseState();
 
-            if (SceneUiManager.Instance)
+            if (SceneUiManager.isAvailable())
             {
                 temp = temp || SceneUiManager.Instance.shouldSendPauseState();
             }

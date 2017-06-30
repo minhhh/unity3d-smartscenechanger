@@ -18,7 +18,7 @@ namespace SSCSample
 
             if(scState.stateEnum == SSC.SceneChangeState.StateEnum.ScenePlaying)
             {
-                if (SSC.SceneUiManager.Instance)
+                if (SSC.SceneUiManager.isAvailable())
                 {
                     SSC.SceneUiManager.Instance.showUi("All", true, false);
                 }
@@ -45,7 +45,7 @@ namespace SSCSample
             else if (Input.GetMouseButtonDown(1))
             {
 
-                if (SSC.SceneUiManager.Instance)
+                if (SSC.SceneUiManager.isAvailable())
                 {
 
                     var list = SSC.SceneUiManager.Instance.currentShowingUiAsReadOnly;
