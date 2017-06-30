@@ -62,9 +62,14 @@ namespace SSC
         protected string m_previousSceneName = "";
 
         /// <summary>
-        /// UI identifiers after loading scene finished
+        /// Common UI identifiers after loading scene finished
         /// </summary>
-        protected List<string> m_uiIdentifiersAfterLoadingScene = new List<string>();
+        protected List<string> m_commonUiIdentifiersAfterLoadingScene = new List<string>();
+
+        /// <summary>
+        /// Scene UI identifiers after loading scene finished
+        /// </summary>
+        protected List<string> m_sceneUiIdentifiersAfterLoadingScene = new List<string>();
 
         /// <summary>
         /// Progresses of loading scenes
@@ -116,6 +121,36 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         protected override void initOnAwake()
         {
+
+            SceneManager.sceneLoaded += this.onSceneLoaded;
+
+            this.m_nowLoadingSceneName = SceneManager.GetActiveScene().name;
+            this.m_previousSceneName = this.m_nowLoadingSceneName;
+
+        }
+
+        /// <summary>
+        /// on scene loaded
+        /// </summary>
+        /// <param name="scene">Scene</param>
+        /// <param name="mode">LoadSceneMode</param>
+        // -------------------------------------------------------------------------------------------------------
+        protected void onSceneLoaded(Scene scene, LoadSceneMode mode)
+        {
+
+            if(mode != LoadSceneMode.Single)
+            {
+                return;
+            }
+
+            // --------------------
+
+            if(scene.name != this.m_nowLoadingSceneName)
+            {
+                this.m_previousSceneName = this.m_nowLoadingSceneName;
+                this.m_nowLoadingSceneName = scene.name;
+            }
+
         }
 
         /// <summary>
@@ -125,7 +160,7 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         public void loadNextScene(string sceneName)
         {
-            this.loadNextScene(sceneName, true, new List<string>());
+            this.loadNextScene(sceneName, true, new List<string>(), new List<string>());
         }
 
         /// <summary>
@@ -135,18 +170,51 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         public void loadNextScene(string sceneName, bool updateHistory)
         {
-            this.loadNextScene(sceneName, updateHistory, new List<string>());
+            this.loadNextScene(sceneName, updateHistory, new List<string>(), new List<string>());
         }
 
         /// <summary>
         /// Load next scene
         /// </summary>
-        /// <param name="sceneName"></param>
-        /// <param name="afterLoadingSceneUiIdentifier"></param>
+        /// <param name="sceneName">scene name</param>
+        /// <param name="updateHistory">update history</param>
+        /// <param name="commonUiIdentifierAfterLoadingScene">common ui identifier</param>
         // -------------------------------------------------------------------------------------------------------
-        public void loadNextScene(string sceneName, bool updateHistory, string afterLoadingSceneUiIdentifier)
+        public void loadNextScene(
+            string sceneName,
+            bool updateHistory,
+            string commonUiIdentifierAfterLoadingScene
+            )
         {
-            this.loadNextScene(sceneName, updateHistory, new List<string>() { afterLoadingSceneUiIdentifier });
+            this.loadNextScene(
+                sceneName,
+                updateHistory,
+                new List<string>() { commonUiIdentifierAfterLoadingScene },
+                new List<string>()
+                );
+        }
+
+        /// <summary>
+        /// Load next scene
+        /// </summary>
+        /// <param name="sceneName">scene name</param>
+        /// <param name="updateHistory">update history</param>
+        /// <param name="commonUiIdentifierAfterLoadingScene">common ui identifier</param>
+        /// <param name="sceneUiIdentifierAfterLoadingScene">scene ui identifier</param>
+        // -------------------------------------------------------------------------------------------------------
+        public void loadNextScene(
+            string sceneName,
+            bool updateHistory,
+            string commonUiIdentifierAfterLoadingScene,
+            string sceneUiIdentifierAfterLoadingScene
+            )
+        {
+            this.loadNextScene(
+                sceneName,
+                updateHistory,
+                new List<string>() { commonUiIdentifierAfterLoadingScene },
+                new List<string>() { sceneUiIdentifierAfterLoadingScene }
+                );
         }
 
         /// <summary>
@@ -155,7 +223,12 @@ namespace SSC
         /// <param name="sceneName"></param>
         /// <param name="uiIdentifiersAfterLoadingScene"></param>
         // -------------------------------------------------------------------------------------------------------
-        public void loadNextScene(string sceneName, bool updateHistory, List<string> uiIdentifiersAfterLoadingScene)
+        public void loadNextScene(
+            string sceneName,
+            bool updateHistory,
+            List<string> commonUiIdentifiersAfterLoadingScene,
+            List<string> sceneUiIdentifiersAfterLoadingScene
+            )
         {
 
             var scState = SimpleReduxManager.Instance.SceneChangeStateWatcher.state();
@@ -198,8 +271,8 @@ namespace SSC
 
                 this.m_nowLoadingSceneName = sceneName;
 
-                //this.m_uiIdentifiersAfterLoadingScene.Clear();
-                this.m_uiIdentifiersAfterLoadingScene.AddRange(uiIdentifiersAfterLoadingScene);
+                this.m_commonUiIdentifiersAfterLoadingScene.AddRange(commonUiIdentifiersAfterLoadingScene);
+                this.m_sceneUiIdentifiersAfterLoadingScene.AddRange(sceneUiIdentifiersAfterLoadingScene);
 
             }
 
@@ -233,7 +306,8 @@ namespace SSC
 
             this.m_loadingScenesProgress.Clear();
 
-            this.m_uiIdentifiersAfterLoadingScene.Clear();
+            this.m_commonUiIdentifiersAfterLoadingScene.Clear();
+            this.m_sceneUiIdentifiersAfterLoadingScene.Clear();
 
             this.m_resumePoint = ResumePoint.None;
 
@@ -260,7 +334,7 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         public void backToTitleScene()
         {
-            this.loadNextScene(this.m_titleSceneName, true, "");
+            this.loadNextScene(this.m_titleSceneName, true, "", "");
         }
 
         /// <summary>
@@ -568,7 +642,18 @@ namespace SSC
 
             // show ui
             {
-                CommonUiManager.Instance.showUi(this.m_uiIdentifiersAfterLoadingScene, true, false, 0, null, this.sendNowLoadingDoneSignal);
+                
+                if (SceneUiManager.isAvailable())
+                {
+                    CommonUiManager.Instance.showUi(this.m_commonUiIdentifiersAfterLoadingScene, true, false, 0, null, null);
+                    SceneUiManager.Instance.showUi(this.m_sceneUiIdentifiersAfterLoadingScene, true, false, 0, null, this.sendNowLoadingDoneSignal);
+                }
+
+                else
+                {
+                    CommonUiManager.Instance.showUi(this.m_commonUiIdentifiersAfterLoadingScene, true, false, 0, null, this.sendNowLoadingDoneSignal);
+                }
+
             }
 
             // clear

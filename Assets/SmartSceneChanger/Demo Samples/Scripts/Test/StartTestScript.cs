@@ -35,8 +35,10 @@ namespace SSCSample
 
             // SSC.SceneChangeManager.Instance.currentNowLoadingIdentifier = "NowLoading1";
 
-            SSC.SceneChangeManager.Instance.loadNextScene(this.m_nextSceneName);
-            //SSC.SceneChangeManager.Instance.loadNextScene("AAA");
+            // SSC.SceneChangeManager.Instance.loadNextScene(this.m_nextSceneName);
+            // SSC.SceneChangeManager.Instance.loadNextScene("AAA");
+
+            SSC.SceneChangeManager.Instance.loadNextScene(this.m_nextSceneName, true, "", "All");
 
         }
 

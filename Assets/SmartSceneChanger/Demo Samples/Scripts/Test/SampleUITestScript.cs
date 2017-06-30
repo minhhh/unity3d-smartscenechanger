@@ -16,13 +16,19 @@ namespace SSCSample
         void onSceneChangeState(SSC.SceneChangeState scState)
         {
 
-            if(scState.stateEnum == SSC.SceneChangeState.StateEnum.ScenePlaying)
-            {
-                if (SSC.SceneUiManager.isAvailable())
-                {
-                    SSC.SceneUiManager.Instance.showUi("All", true, false);
-                }
-            }
+
+            // Use can use this function
+            // SSC.SceneChangeManager.Instance.loadNextScene(this.m_nextSceneName, true, "", "All");
+            // See StartTestScript.loadNextScene()
+
+
+            //if(scState.stateEnum == SSC.SceneChangeState.StateEnum.ScenePlaying)
+            //{
+            //    if (SSC.SceneUiManager.isAvailable())
+            //    {
+            //        SSC.SceneUiManager.Instance.showUi("All", true, false);
+            //    }
+            //}
 
         }
 
