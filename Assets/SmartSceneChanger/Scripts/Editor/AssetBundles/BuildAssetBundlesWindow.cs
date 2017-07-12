@@ -1068,7 +1068,7 @@ namespace SSC
 
             AssetDatabase.Refresh();
 
-            File.Delete(sopath);
+            AssetDatabase.DeleteAsset(sopath);
 
             AssetDatabase.Refresh();
 
