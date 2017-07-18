@@ -113,6 +113,11 @@ namespace SSC
         /// </summary>
         public string currentNowLoadingUiIdentifier { get { return this.m_currentNowLoadingUiIdentifier; } set { this.m_currentNowLoadingUiIdentifier = value; } }
 
+        /// <summary>
+        /// Title scene name
+        /// </summary>
+        public string titleSceneName { get { return this.m_titleSceneName; } }
+
         // -------------------------------------------------------------------------------------------------------
 
         /// <summary>
