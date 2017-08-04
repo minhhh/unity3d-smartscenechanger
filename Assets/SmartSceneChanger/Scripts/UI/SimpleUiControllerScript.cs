@@ -134,10 +134,14 @@ namespace SSC
 
             if (this.m_hideAtAwake)
             {
+
                 this.m_refCanvasGroup.alpha = 0.0f;
                 this.m_refCanvasGroup.interactable = false;
                 this.m_refCanvasGroup.blocksRaycasts = false;
                 this.m_shState = ShowHideState.NowHiding;
+
+                this.m_refRectTransform.anchoredPosition = this.m_targetPos + this.m_transitionRelativeTo;
+
             }
 
         }
