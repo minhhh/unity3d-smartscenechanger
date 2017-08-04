@@ -40,6 +40,32 @@ namespace SSC
         }
 
         /// <summary>
+        /// Insert Action
+        /// </summary>
+        /// <param name="index">index</param>
+        /// <param name="action">add action</param>
+        public void insertAction(int index, Action<T> action)
+        {
+
+            if (action != null)
+            {
+
+                if(this.m_actionList.Count > 0)
+                {
+                    index = Mathf.Clamp(index, 0, this.m_actionList.Count - 1);
+                    this.m_actionList.Insert(index, action);
+                }
+
+                else
+                {
+                    this.addAction(action);
+                }
+
+            }
+
+        }
+
+        /// <summary>
         /// Remove Action
         /// </summary>
         /// <param name="action">remove action</param>
