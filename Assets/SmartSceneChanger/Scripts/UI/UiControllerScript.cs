@@ -64,6 +64,17 @@ namespace SSC
         // ------------------------------------------------------------------------------------------
 
         /// <summary>
+        /// Start showing for button
+        /// </summary>
+        /// <param name="showDoneCallback">callback when showing done</param>
+        /// <returns>start or not</returns>
+        // ------------------------------------------------------------------------------------------
+        public virtual void startShowingForButton()
+        {
+            this.startShowing(false, 0.0f, null);
+        }
+
+        /// <summary>
         /// Start showing
         /// </summary>
         /// <param name="showDoneCallback">callback when showing done</param>
@@ -116,8 +127,20 @@ namespace SSC
 
         }
 
+        /// <summary>
+        /// Start hiding for invoke
+        /// </summary>
         // ------------------------------------------------------------------------------------------
         protected virtual void startHidingInvoke()
+        {
+            this.startHiding(null);
+        }
+
+        /// <summary>
+        /// Start hiding for button
+        /// </summary>
+        // ------------------------------------------------------------------------------------------
+        public virtual void startHidingForButton()
         {
             this.startHiding(null);
         }
