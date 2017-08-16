@@ -117,9 +117,9 @@ namespace SSC
         protected List<System.Object> m_errorDialogMessagesStack = new List<System.Object>();
 
         /// <summary>
-        /// pause state before dialog showing
+        /// Should send unpdause signal
         /// </summary>
-        protected bool m_previousPauseState = false;
+        protected bool m_shouldUnpause = false;
 
         /// <summary>
         /// Reference to Selectable before showing dialog
@@ -318,10 +318,9 @@ namespace SSC
 
             var pState = SimpleReduxManager.Instance.PauseStateWatcher.state();
 
-            this.m_previousPauseState = pState.pause;
-
             if (pState.pause == false)
             {
+                this.m_shouldUnpause = true;
                 pState.setState(SimpleReduxManager.Instance.PauseStateWatcher, true);
             }
 
@@ -333,11 +332,15 @@ namespace SSC
         // -------------------------------------------------------------------------------------
         protected void resumePauseSignalIfNeeded()
         {
-            if (this.m_previousPauseState == false)
+
+            if (this.m_shouldUnpause == true)
             {
                 var pState = SimpleReduxManager.Instance.PauseStateWatcher.state();
                 pState.setState(SimpleReduxManager.Instance.PauseStateWatcher, false);
             }
+
+            this.m_shouldUnpause = false;
+
         }
 
         /// <summary>
