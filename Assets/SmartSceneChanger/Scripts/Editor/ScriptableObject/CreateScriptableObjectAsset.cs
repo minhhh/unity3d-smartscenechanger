@@ -22,14 +22,21 @@ namespace SSC
 
             var selected = Selection.objects[0];
 
-            string fileName = Path.GetFileNameWithoutExtension(AssetDatabase.GetAssetPath(selected));
+            string assetPath = AssetDatabase.GetAssetPath(selected);
+            string fileName = Path.GetFileNameWithoutExtension(assetPath);
 
             ScriptableObject asset = ScriptableObject.CreateInstance(fileName);
 
             if (asset)
             {
 
-                string path = EditorUtility.SaveFilePanelInProject("Save", fileName, "asset", "Please enter a file name to save the ScriptableObject to");
+                string path = EditorUtility.SaveFilePanelInProject(
+                    "Save",
+                    fileName,
+                    "asset",
+                    "Please enter a file name to save the ScriptableObject to",
+                    Path.GetDirectoryName(assetPath)
+                    );
 
                 if (!string.IsNullOrEmpty(path))
                 {
