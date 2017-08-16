@@ -251,6 +251,11 @@ namespace SSC
 
             }
 
+            // m_consecutiveShowing
+            {
+                this.m_consecutiveShowing = false;
+            }
+
         }
 
         /// <summary>
