@@ -31,7 +31,7 @@ namespace SSC
                 return instance;
             }
         }
-
+        
         //------------------------------------
 
         /// <summary>

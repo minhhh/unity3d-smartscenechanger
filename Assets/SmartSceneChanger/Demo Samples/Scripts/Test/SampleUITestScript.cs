@@ -10,18 +10,18 @@ namespace SSCSample
 
         void Start()
         {
-            SSC.SimpleReduxManager.Instance.SceneChangeStateWatcher.addAction(this.onSceneChangeState);
+            SSC.SimpleReduxManager.Instance.addSceneChangeStateReceiver(this.onSceneChangeState);
         }
 
         void onSceneChangeState(SSC.SceneChangeState scState)
         {
 
 
-            // Use can use this function
+            // You can use this function
             // SSC.SceneChangeManager.Instance.loadNextScene(this.m_nextSceneName, true, "", "All");
             // See StartTestScript.loadNextScene()
 
-
+            // comment out
             //if(scState.stateEnum == SSC.SceneChangeState.StateEnum.ScenePlaying)
             //{
             //    if (SSC.SceneUiManager.isAvailable())
