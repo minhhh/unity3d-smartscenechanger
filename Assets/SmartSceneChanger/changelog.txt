@@ -1,4 +1,64 @@
-3aabfdb (HEAD -> master, tag: v2.0.0, origin/master) ver2
+674a327 (HEAD -> master, tag: v2.1.0, origin/master) update : readme
+f3bb5d4 Merge branch 'master' of https://bitbucket.org/ciitt/unity3d-smartscenechanger
+1f4a2d4 update : update Unity version from 5.5.0f3 to 5.5.4p3 because of Unity's security patch
+119454c USELESS COMMIT
+a8d94f6 update : README.md
+238c2fe update : default save path in CreateScriptableObjectAsset
+8192b4a update : set dialog manager rederences to buttons
+bfa8a09 update : reset consecutiveShowing flag in DialogManager
+2bcf5d3 fix : dialog unpause
+4fba8a7 update : TestSReduxScript
+40aa15d add : add test code for SRedux
+d746fa7 add : UiType
+ae3177b clean : clean code
+8241613 fix : UI position when hideAtAwake in SimpleUiControllerScript
+b203681 add : show and hide function for button click
+8c5311d add : add insertAction function to StateWatcher
+cb2edbf add : getter property for title scene name
+fb2811e modify : make backToTitleScene function virtual
+bd7aabb add : create scriptable object context menu
+bd1234a fix : hoe to delete dummy file
+771c904 fix : fix showing UI after now loading is done
+320590c fix modify : show common and scene UI after changing scene is done
+83ca712 add : add isAvailable function to UiManager
+61d0d43 add : add static singleton isAvailable function
+2c85f0e fix : SceneChangeState NowLoadingMain
+5b4ec78 add : add a tool for creating startup managers
+78560bf add : bit mask attribute for enum
+788beff add : add AllStartupsDone state to SceneChangeState
+7e15b7c add : concecutive dialog
+a1ed868 fix : fix dialog callback order
+064436f add: add progress dialog
+f5337d8 add : add UiManager type enum
+0048e85 add : add UI dictionary getter to UiManager
+28db8eb add : add  a string variable to DialogMessages
+d311703 fix : call done callback properly
+aa04035 fix : fix about m_detectedNewStartupObject in AssetBundleStartupManager
+95ca00a fix : how to detect new startup objects
+47a09c7 add : async success funtion for AssetBundle startup
+74cf0f0 modify : add default variable to startHiding function in UiControllerScript
+98db9b9 modify : not to remove "assets/" in SetAssetBundleNameWindow and SetAssetBundleNameContextMenu
+818cb25 fix : doneSuccess flag in IEnumeratorStartupManager
+4d63e8e add : lock state in SceneChangeManager
+e20990a fix : fix and modify IEnumeratorStartupScript and IEnumeratorStartupManager
+6c9294a fix : fix IEnumeratorStartupScript
+cd458f1 add : show all AssetBundle names tool
+8e4261a add : set AssetBundle name by right click menu
+b78e637 remove : I forgot to remove experimental codes
+fcd0eaf fix : resume selectable focus when showing a dialog done
+866da73 add : detailed success function in AssetBundle startup manager
+befe2fa modify : show confirmation dialog when click reset settings button in build assetbunles window
+f2cca67 fix : change result extension in SetAssetBundleNameWindow
+b1073c1 modify : remove unnecessary code
+1b3de1c add : set AssetBundle name tool
+bb5fc79 fix : setSelectable in UiManager
+33dcb5b fix : back function in UiManager
+73a9ec5 add : if new startup object detected, restart startups
+6b363db modify : SimpleReduxManager inheriatable
+d4d16e8 Merge branch 'master' of https://bitbucket.org/ciitt/unity3d-smartscenechanger
+0a3d7fb change changelog.txt change base prefab
+fd3e3bf README.md edited online with Bitbucket
+3aabfdb (tag: v2.0.0) ver2
 fd3e148 Update : changelog.txt
 4d158bb (tag: v1.0.1) Fix : use Hash128 in LoadFromCacheOrDownload
 747cb36 README.md edited online with Bitbucket
