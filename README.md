@@ -89,6 +89,7 @@ See SSC Sample Scene -> sample www startup -> SampleAssetBundleStartupScript
 * AssetBundleStartupScript for AssetBundle startup loading.  
 See [SSC Sample Scene -> sample ab startup -> SampleAssetBundleStartupScript]  
 See [SSC Sample Scene -> sample ab scene startup -> SampleAssetBundleStartupScript]  
+(ver2.1) See [SSC Sample Scene -> sample detail sync ab startup -> SampleAssetBundleStartupAsyncScript]  
 
 ----
 ## Customize Startup Manager
@@ -110,6 +111,7 @@ See [SSC Demo Init Scene -> Smart Scene Changer Sample -> SampleIEnumeratorStart
 * (If AssetBundle additive scene was detected, restart from IEnumeratorStartupScript(before)])
 * Start loading all of [WwwStartupScript]
 * Start loading all of [IEnumeratorStartupScript(after)]
+* (ver2.1) If new startup objected are detected, restart new all startups.
 * Start hiding nowloading UI
 
 ----
@@ -172,7 +174,19 @@ pState.setState(SimpleReduxManager.Instance.PauseStateWatcher, bool);
 Quick scene access tool in editor.
 
 * Tools -> SSC -> Sample Build AssetBundles Window  
-Build AssetBundles tool with encryption.
+A tool to build AssetBundles with encryption.
+
+----
+## Tools (ver 2.1)
+
+* Tools -> SSC -> Set AssetBundle Name Window  
+A tool to label AssetBundles.
+
+* Tools -> SSC -> Show All AssetBundle Names Window  
+A tool to show all AssetBundle names.
+
+* Tools -> SSC -> Create Starter Window  
+A tool to create starter managers.
 
 ----
 ## Warnings
