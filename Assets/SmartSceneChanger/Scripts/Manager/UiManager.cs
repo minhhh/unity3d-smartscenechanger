@@ -254,11 +254,16 @@ namespace SSC
 
             if (list.Count <= 0)
             {
+
                 if (showAllDoneCallback != null)
                 {
                     showAllDoneCallback();
                 }
+
+                this.setSelectable(this.m_currentShowingUi);
+
                 return;
+
             }
 
             this.m_nowInShowingTransition = true;
@@ -572,7 +577,7 @@ namespace SSC
         /// </summary>
         /// <param name="identifiers">UiIdentifiers</param>
         // -------------------------------------------------------------------------------------
-        protected void setSelectable(UiIdentifiers identifiers)
+        public virtual void setSelectable(UiIdentifiers identifiers)
         {
 
 #if UNITY_IOS || UNITY_ANDROID
@@ -581,22 +586,48 @@ namespace SSC
             return;
 #else
 
-            if (identifiers.Count <= 0)
+            string id = (identifiers.Count > 0) ? identifiers[0] : "";
+
+            if (!string.IsNullOrEmpty(id) && this.m_uiDictionary.ContainsKey(id) && this.m_uiDictionary[id].defaultSelectable)
             {
-                EventSystem.current.SetSelectedGameObject(null);
-                return;
+                this.m_uiDictionary[id].defaultSelectable.Select();
             }
 
-            // ----------------
-
-            string id = identifiers[0];
-
-            if (this.m_uiDictionary.ContainsKey(id))
+            else
             {
 
-                if (this.m_uiDictionary[id].defaultSelectable)
+                if (this is CommonUiManager && SceneUiManager.isAvailable())
                 {
-                    this.m_uiDictionary[id].defaultSelectable.Select();
+
+                    var temp = SceneUiManager.Instance.currentShowingUiCopy;
+
+                    if (temp.Count > 0)
+                    {
+                        SceneUiManager.Instance.setSelectable(temp);
+                    }
+
+                    else
+                    {
+                        EventSystem.current.SetSelectedGameObject(null);
+                    }
+                    
+                }
+
+                else if(this is SceneUiManager)
+                {
+
+                    var temp = CommonUiManager.Instance.currentShowingUiCopy;
+
+                    if (temp.Count > 0)
+                    {
+                        CommonUiManager.Instance.setSelectable(temp);
+                    }
+
+                    else
+                    {
+                        EventSystem.current.SetSelectedGameObject(null);
+                    }
+
                 }
 
                 else
@@ -604,11 +635,6 @@ namespace SSC
                     EventSystem.current.SetSelectedGameObject(null);
                 }
 
-            }
-
-            else
-            {
-                EventSystem.current.SetSelectedGameObject(null);
             }
 
 #endif
