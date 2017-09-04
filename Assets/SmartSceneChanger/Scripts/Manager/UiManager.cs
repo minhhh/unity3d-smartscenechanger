@@ -260,6 +260,8 @@ namespace SSC
                     showAllDoneCallback();
                 }
 
+                this.m_nowInShowingTransition = false;
+
                 this.setSelectable(this.m_currentShowingUi);
 
                 return;
@@ -317,11 +319,16 @@ namespace SSC
 
             if (list.Count <= 0)
             {
+
+                this.m_nowInHidingTransition = false;
+
                 if (hideAllDoneCallback != null)
                 {
                     hideAllDoneCallback();
                 }
+
                 return;
+
             }
 
             this.m_nowInHidingTransition = true;
