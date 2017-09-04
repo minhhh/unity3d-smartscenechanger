@@ -573,6 +573,23 @@ namespace SSC
         }
 
         /// <summary>
+        /// Get default Selectable from current showing ui
+        /// </summary>
+        /// <returns>Selectable</returns>
+        // -------------------------------------------------------------------------------------
+        public Selectable getDefaultSelectableFromCurrentShowingUi()
+        {
+            
+            if(this.m_currentShowingUi.Count > 0 && this.m_uiDictionary.ContainsKey(this.m_currentShowingUi[0]))
+            {
+                return this.m_uiDictionary[this.m_currentShowingUi[0]].defaultSelectable;
+            }
+
+            return null;
+
+        }
+
+        /// <summary>
         /// Set Selectable
         /// </summary>
         /// <param name="identifiers">UiIdentifiers</param>
@@ -599,11 +616,11 @@ namespace SSC
                 if (this is CommonUiManager && SceneUiManager.isAvailable())
                 {
 
-                    var temp = SceneUiManager.Instance.currentShowingUiCopy;
+                    var temp = SceneUiManager.Instance.getDefaultSelectableFromCurrentShowingUi();
 
-                    if (temp.Count > 0)
+                    if (temp)
                     {
-                        SceneUiManager.Instance.setSelectable(temp);
+                        temp.Select();
                     }
 
                     else
@@ -616,11 +633,11 @@ namespace SSC
                 else if(this is SceneUiManager)
                 {
 
-                    var temp = CommonUiManager.Instance.currentShowingUiCopy;
+                    var temp = CommonUiManager.Instance.getDefaultSelectableFromCurrentShowingUi();
 
-                    if (temp.Count > 0)
+                    if (temp)
                     {
-                        CommonUiManager.Instance.setSelectable(temp);
+                        temp.Select();
                     }
 
                     else
