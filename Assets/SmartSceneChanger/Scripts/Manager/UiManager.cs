@@ -262,7 +262,7 @@ namespace SSC
 
                 this.m_nowInShowingTransition = false;
 
-                this.setSelectable(this.m_currentShowingUi);
+                setSelectable();
 
                 return;
 
@@ -293,7 +293,7 @@ namespace SSC
 
                         this.m_nowInShowingTransition = false;
 
-                        this.setSelectable(this.m_currentShowingUi);
+                        setSelectable();
 
                         if (showAllDoneCallback != null)
                         {
@@ -405,7 +405,7 @@ namespace SSC
         // ----------------------------------------------------------------------------------------
         public void hideUi()
         {
-            
+
         }
 
         /// <summary>
@@ -476,11 +476,11 @@ namespace SSC
         public virtual bool shouldSendPauseState()
         {
 
-            foreach(string id in this.m_currentShowingUi)
+            foreach (string id in this.m_currentShowingUi)
             {
-                if(this.m_uiDictionary.ContainsKey(id))
+                if (this.m_uiDictionary.ContainsKey(id))
                 {
-                    if(this.m_uiDictionary[id].sendPauseSignal)
+                    if (this.m_uiDictionary[id].sendPauseSignal)
                     {
                         return true;
                     }
@@ -509,7 +509,7 @@ namespace SSC
 
             var pState = SimpleReduxManager.Instance.PauseStateWatcher.state();
 
-            if(temp != pState.pause)
+            if (temp != pState.pause)
             {
                 pState.setState(SimpleReduxManager.Instance.PauseStateWatcher, temp);
             }
@@ -530,7 +530,7 @@ namespace SSC
             for (int i = identifiers.Count - 1; i >= 0; i--)
             {
 
-                if(string.IsNullOrEmpty(identifiers[i]))
+                if (string.IsNullOrEmpty(identifiers[i]))
                 {
                     identifiers.RemoveAt(i);
                 }
@@ -586,8 +586,8 @@ namespace SSC
         // -------------------------------------------------------------------------------------
         public Selectable getDefaultSelectableFromCurrentShowingUi()
         {
-            
-            if(this.m_currentShowingUi.Count > 0 && this.m_uiDictionary.ContainsKey(this.m_currentShowingUi[0]))
+
+            if (this.m_currentShowingUi.Count > 0 && this.m_uiDictionary.ContainsKey(this.m_currentShowingUi[0]))
             {
                 return this.m_uiDictionary[this.m_currentShowingUi[0]].defaultSelectable;
             }
@@ -601,7 +601,7 @@ namespace SSC
         /// </summary>
         /// <param name="identifiers">UiIdentifiers</param>
         // -------------------------------------------------------------------------------------
-        public virtual void setSelectable(UiIdentifiers identifiers)
+        public static void setSelectable()
         {
 
 #if UNITY_IOS || UNITY_ANDROID
@@ -610,46 +610,40 @@ namespace SSC
             return;
 #else
 
-            string id = (identifiers.Count > 0) ? identifiers[0] : "";
 
-            if (!string.IsNullOrEmpty(id) && this.m_uiDictionary.ContainsKey(id) && this.m_uiDictionary[id].defaultSelectable)
+            // -----------------
+
+            Selectable commonUiSelectable = CommonUiManager.Instance.getDefaultSelectableFromCurrentShowingUi();
+            Selectable sceneUiSelectable = (SceneUiManager.isAvailable()) ? SceneUiManager.Instance.getDefaultSelectableFromCurrentShowingUi() : null;
+            GameObject currentGameObject = EventSystem.current.currentSelectedGameObject;
+            bool nowInShowingTransitionCommon = CommonUiManager.Instance.m_nowInShowingTransition;
+            bool nowInShowingTransitionScene = (SceneUiManager.isAvailable()) ? SceneUiManager.Instance.m_nowInShowingTransition : false;
+
+            if (nowInShowingTransitionCommon || nowInShowingTransitionScene)
             {
-                this.m_uiDictionary[id].defaultSelectable.Select();
+                return;
             }
 
-            else
+            // --------------------
+
             {
 
-                if (this is CommonUiManager && SceneUiManager.isAvailable())
+                if (commonUiSelectable)
                 {
 
-                    var temp = SceneUiManager.Instance.getDefaultSelectableFromCurrentShowingUi();
-
-                    if (temp)
+                    if (currentGameObject != commonUiSelectable.gameObject)
                     {
-                        temp.Select();
+                        commonUiSelectable.Select();
                     }
 
-                    else
-                    {
-                        EventSystem.current.SetSelectedGameObject(null);
-                    }
-                    
                 }
 
-                else if(this is SceneUiManager)
+                else if (sceneUiSelectable)
                 {
 
-                    var temp = CommonUiManager.Instance.getDefaultSelectableFromCurrentShowingUi();
-
-                    if (temp)
+                    if (currentGameObject != sceneUiSelectable.gameObject)
                     {
-                        temp.Select();
-                    }
-
-                    else
-                    {
-                        EventSystem.current.SetSelectedGameObject(null);
+                        sceneUiSelectable.Select();
                     }
 
                 }

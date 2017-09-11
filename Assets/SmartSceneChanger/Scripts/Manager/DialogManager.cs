@@ -122,11 +122,6 @@ namespace SSC
         protected bool m_shouldUnpause = false;
 
         /// <summary>
-        /// Reference to Selectable before showing dialog
-        /// </summary>
-        protected Selectable m_refSelectableBeforeShowingDialog = null;
-
-        /// <summary>
         /// Consecutive showing dialogs flag
         /// </summary>
         protected bool m_consecutiveShowing = false;
@@ -202,17 +197,7 @@ namespace SSC
 
                     // resume selectable
                     {
-
-                        if (this.m_refSelectableBeforeShowingDialog)
-                        {
-                            EventSystem.current.SetSelectedGameObject(this.m_refSelectableBeforeShowingDialog.gameObject);
-                        }
-
-                        else
-                        {
-                            EventSystem.current.SetSelectedGameObject(null);
-                        }
-
+                        UiManager.setSelectable();
                     }
 
                     if (finishDoneCallback != null)
@@ -231,17 +216,7 @@ namespace SSC
 
                 // resume selectable
                 {
-
-                    if (this.m_refSelectableBeforeShowingDialog)
-                    {
-                        EventSystem.current.SetSelectedGameObject(this.m_refSelectableBeforeShowingDialog.gameObject);
-                    }
-
-                    else
-                    {
-                        EventSystem.current.SetSelectedGameObject(null);
-                    }
-
+                    UiManager.setSelectable();
                 }
 
                 if (finishDoneCallback != null)
@@ -305,7 +280,7 @@ namespace SSC
 
             // --------------------------
 
-            if(this.m_errorDialogMessagesStack.Count >= this.m_numberOfErrorStack)
+            if (this.m_errorDialogMessagesStack.Count >= this.m_numberOfErrorStack)
             {
                 this.m_errorDialogMessagesStack.RemoveAt(0);
             }
@@ -371,8 +346,6 @@ namespace SSC
                 this.m_okButtonCallback = okCallback;
                 this.m_yesButtonCallback = null;
                 this.m_noButtonCallback = null;
-
-                this.updateRefSelectableBeforeShowingDialog();
 
             }
 
@@ -451,8 +424,6 @@ namespace SSC
                 this.m_yesButtonCallback = yesCallback;
                 this.m_noButtonCallback = noCallback;
 
-                this.updateRefSelectableBeforeShowingDialog();
-
             }
 
             // addErrorStackIfError
@@ -525,8 +496,6 @@ namespace SSC
 
                 this.m_nowShowing = true;
 
-                this.updateRefSelectableBeforeShowingDialog();
-
             }
 
             // sendPauseSignalIfNeeded
@@ -571,7 +540,7 @@ namespace SSC
                 this.m_refOkDialog.startHiding(() =>
                 {
 
-                    if(this.m_consecutiveShowing)
+                    if (this.m_consecutiveShowing)
                     {
                         if (this.m_okButtonCallback != null)
                         {
@@ -705,7 +674,7 @@ namespace SSC
                     if (this.m_consecutiveShowing)
                     {
 
-                        if(hideDoneCallback != null)
+                        if (hideDoneCallback != null)
                         {
                             hideDoneCallback();
                         }
@@ -716,48 +685,14 @@ namespace SSC
                     {
                         this.finishDialog(hideDoneCallback);
                     }
-                        
+
                 });
 
             }
 
         }
 
-        /// <summary>
-        /// Update m_refSelectableBeforeShowingDialog
-        /// </summary>
-        // ----------------------------------------------------------------------------------------
-        protected void updateRefSelectableBeforeShowingDialog()
-        {
-
-            Selectable currentSelectable = null;
-            GameObject selected = EventSystem.current.currentSelectedGameObject;
-
-            if (selected)
-            {
-
-                currentSelectable = selected.GetComponent<Selectable>();
-
-                if (currentSelectable &&
-                currentSelectable != this.m_refOkButtonSelectable &&
-                currentSelectable != this.m_refYesButtonSelectable &&
-                currentSelectable != this.m_refNoButtonSelectable
-                )
-                {
-                    this.m_refSelectableBeforeShowingDialog = currentSelectable;
-                }
-
-            }
-
-            else
-            {
-                this.m_refSelectableBeforeShowingDialog = null;
-            }
-
-        }
-
     }
-
 
 }
 
