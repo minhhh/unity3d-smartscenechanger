@@ -264,7 +264,9 @@ namespace SSC
             using (WWW www = new WWW(wwws.url))
             {
 
+#if !UNITY_WEBGL
                 www.threadPriority = this.m_threadPriority;
+#endif
 
                 // wait www done
                 {

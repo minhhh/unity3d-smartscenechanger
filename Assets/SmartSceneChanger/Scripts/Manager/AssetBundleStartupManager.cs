@@ -746,7 +746,9 @@ namespace SSC
             using (WWW abwww = WWW.LoadFromCacheOrDownload(this.createAssetBundleUrl(keyNameDotVariant), this.m_manifest.GetAssetBundleHash(keyNameDotVariant)))
             {
 
+#if !UNITY_WEBGL
                 abwww.threadPriority = this.m_threadPriority;
+#endif
 
                 // wait www done
                 {
@@ -1052,7 +1054,9 @@ namespace SSC
             using (WWW dependwww = WWW.LoadFromCacheOrDownload(this.createAssetBundleUrl(key), this.m_manifest.GetAssetBundleHash(key)))
             {
 
+#if !UNITY_WEBGL
                 dependwww.threadPriority = this.m_threadPriority;
+#endif
 
                 while (!dependwww.isDone)
                 {
@@ -1437,7 +1441,9 @@ namespace SSC
             using (WWW www = new WWW(this.m_assetBundleManifestFileUrl))
             {
 
+#if !UNITY_WEBGL
                 www.threadPriority = this.m_threadPriority;
+#endif
 
                 while (!www.isDone)
                 {
@@ -1645,7 +1651,9 @@ namespace SSC
             using (WWW abwww = WWW.LoadFromCacheOrDownload(this.createAssetBundleUrl(abs.nameDotVariant), this.m_manifest.GetAssetBundleHash(abs.nameDotVariant)))
             {
 
+#if !UNITY_WEBGL
                 abwww.threadPriority = this.m_threadPriority;
+#endif
 
                 // wait www done
                 {
