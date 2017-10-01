@@ -339,7 +339,7 @@ namespace SSC
         // -------------------------------------------------------------------------------------------------------
         public virtual void backToTitleScene()
         {
-            this.loadNextScene(this.m_titleSceneName, true, "", "");
+            this.loadNextScene(this.m_titleSceneName);
         }
 
         /// <summary>
