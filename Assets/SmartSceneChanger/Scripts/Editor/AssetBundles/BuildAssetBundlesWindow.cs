@@ -8,6 +8,8 @@ using UnityEngine;
 namespace SSC
 {
 
+#if UNITY_5
+
     [InitializeOnLoad]
     public class BuildTargetChanged
     {
@@ -21,6 +23,26 @@ namespace SSC
             Debug.LogWarning("Don't forget to change Editor's Graphics API");
         }
     }
+
+#elif UNITY_2017_1_OR_NEWER
+
+    public class BuildTargetChanged : UnityEditor.Build.IActiveBuildTargetChanged
+    {
+        public int callbackOrder
+        {
+            get
+            {
+                return 0;
+            }
+        }
+
+        public void OnActiveBuildTargetChanged(BuildTarget previousTarget, BuildTarget newTarget)
+        {
+            Debug.LogWarning("Don't forget to change Editor's Graphics API");
+        }
+    }
+
+#endif
 
     /// <summary>
     /// Class for Build AssetBundles Window
