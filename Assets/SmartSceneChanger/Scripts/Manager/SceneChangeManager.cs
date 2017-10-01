@@ -388,10 +388,24 @@ namespace SSC
 
             // wait by lock
             {
+
+                int i = 0;
+
                 while(this.m_lockBeforeLoadings.Count > 0)
                 {
+
                     yield return null;
+
+                    for(i = this.m_lockBeforeLoadings.Count - 1; i >= 0; i--)
+                    {
+                        if(!this.m_lockBeforeLoadings[i])
+                        {
+                            this.m_lockBeforeLoadings.RemoveAt(i);
+                        }
+                    }
+
                 }
+
             }
 
             // unload
@@ -633,10 +647,24 @@ namespace SSC
 
             // wait by lock
             {
+
+                int i = 0;
+
                 while (this.m_lockAfterLoadings.Count > 0)
                 {
+
                     yield return null;
+
+                    for (i = this.m_lockAfterLoadings.Count - 1; i >= 0; i--)
+                    {
+                        if (!this.m_lockAfterLoadings[i])
+                        {
+                            this.m_lockAfterLoadings.RemoveAt(i);
+                        }
+                    }
+
                 }
+
             }
 
             // SceneChangeStateWatcher
