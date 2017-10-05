@@ -551,6 +551,41 @@ namespace SSC
 
 #endif
 
+            // check the same
+            {
+
+                bool same = true;
+
+                if (identifiers.Count == this.m_currentShowingUi.Count)
+                {
+
+                    int count = identifiers.Count;
+
+                    for (int i = 0; i < count; i++)
+                    {
+
+                        if (!identifiers.Contains(this.m_currentShowingUi[i]))
+                        {
+                            same = false;
+                            break;
+                        }
+
+                    }
+
+                }
+
+                else
+                {
+                    same = false;
+                }
+
+                if (same)
+                {
+                    return;
+                }
+
+            }
+
             List<UiControllerScript> showList = this.listByIdentifier(identifiers);
             List<UiControllerScript> hideList = this.listByIdentifier(this.m_currentShowingUi, showList);
 
