@@ -1,4 +1,15 @@
-674a327 (HEAD -> master, tag: v2.1.0, origin/master) update : readme
+37a024f (HEAD -> master, tag: v2.2.0, origin/master) modify : not update UI history if the same parameters
+5190fa9 modify : warning message for Unity 2017.1
+d2cea22 fix : remove null instance in lock state in SceneChangeManager
+5e09836 modify : parameters in backToTitleScene function
+a60db5d fix : remove WWW.threadPriority if WebGL
+4ee80c9 fix : remove unnecessary script in progress dialog's slider
+3443a31 fix ; setSelectable function in UiManager and DialogManager
+46f92a4 fix : transition flag bug by StopAllCoroutines in UiControllerScript
+05bc4e9 fix : fix inifinite loop in last commit.
+0c26ea1 fix : UIManager.setSelectable
+3971c15 update : changelog
+674a327 (tag: v2.1.0) update : readme
 f3bb5d4 Merge branch 'master' of https://bitbucket.org/ciitt/unity3d-smartscenechanger
 1f4a2d4 update : update Unity version from 5.5.0f3 to 5.5.4p3 because of Unity's security patch
 119454c USELESS COMMIT
